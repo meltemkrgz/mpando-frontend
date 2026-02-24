@@ -105,7 +105,7 @@ const navigationGroups = [
     title: 'MAIN MENU',
     items: [
       { name: 'Dashboard', icon: icons.Dashboard, isActive: true },
-      { name: 'Projects', icon: icons.Projects },
+      { name: 'Projects', icon: icons.Projects, href: "/projects" },
       { name: 'AI Project Analysis', icon: icons.AI },
       { name: 'Quantity Takeoff', icon: icons.QuantityTakeoff },
       { name: 'Inventory', icon: icons.Inventory },
@@ -132,47 +132,31 @@ const navigationGroups = [
   }
 ];
 
-export default function AppleStyleSidebar() {
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+export default function AppleStyleSidebar({ isMobileMenuOpen, closeMobileMenu }) {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
 
-  const toggleMobileMenu = () => setIsMobileMenuOpen(!isMobileMenuOpen);
-  const closeMobileMenu = () => setIsMobileMenuOpen(false);
   const toggleDesktopCollapse = () => setIsSidebarCollapsed(!isSidebarCollapsed);
 
-  const sidebarWidthClass = isSidebarCollapsed ? 'w-20' : 'w-[280px]';
+  // width helper: mobile always 280px, but on md screens shrink when collapsed
+  const sidebarWidthClass = isSidebarCollapsed ? 'w-[280px] md:w-20' : 'w-[280px] md:w-[280px]';
 
   return (
-    // Ana arka plan (Bu kısmı kendi ana layout'unuza göre ayarlayabilirsiniz, şu an açık gri)
-    <div className="flex min-h-screen bg-[#F5F5F7] text-slate-800 font-sans">
-      
-      {/* Mobile Top Bar */}
-      <div className="md:hidden flex items-center justify-between p-4 bg-white/80 backdrop-blur-md border-b border-slate-200 fixed top-0 left-0 right-0 z-40">
-        <div className="flex items-center gap-2 font-semibold text-lg text-slate-800 tracking-tight">
-          <div className="w-7 h-7 rounded-lg bg-gradient-to-tr from-slate-800 to-slate-600 text-white flex items-center justify-center text-sm shadow-md">M</div>
-          MPANDO
-        </div>
-        <button onClick={toggleMobileMenu} className="p-2 text-slate-500 hover:text-slate-800 transition-colors">
-          {icons.Menu}
-        </button>
-      </div>
-
+    <>
       {/* Mobile Overlay */}
       {isMobileMenuOpen && (
         <div 
-          className="fixed inset-0 bg-slate-900/20 backdrop-blur-sm z-40 md:hidden transition-opacity duration-300"
+          className="fixed inset-0 bg-slate-900/20 backdrop-blur-sm z-45 md:hidden transition-opacity duration-300"
           onClick={closeMobileMenu}
         />
       )}
 
       {/* Sidebar Component */}
       <aside 
-        className={`fixed inset-y-0 left-0 z-50 flex flex-col 
+        className={`fixed inset-y-0 left-0 z-50 flex flex-col ${sidebarWidthClass}
           bg-white/70 backdrop-blur-xl border-r border-slate-200/60 shadow-[4px_0_24px_-12px_rgba(0,0,0,0.1)]
           transform transition-all duration-500 cubic-bezier(0.16, 1, 0.3, 1) 
           md:relative md:translate-x-0 
-          ${isMobileMenuOpen ? 'translate-x-0 w-[280px]' : '-translate-x-full'} 
-          md:${sidebarWidthClass}`}
+          ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}`}
       >
         {/* Header Section */}
         <div className={`flex items-center ${isSidebarCollapsed ? 'justify-center' : 'justify-between px-6'} h-16 mb-2`}>
@@ -259,7 +243,7 @@ export default function AppleStyleSidebar() {
                   {group.items.map((item, itemIdx) => (
                     <li key={itemIdx}>
                       <a
-                        href="#"
+                        href={item.href}
                         onClick={closeMobileMenu}
                         className={`
                           group flex items-center gap-3 px-3 py-2 rounded-lg transition-all duration-200 ease-out
@@ -335,31 +319,6 @@ export default function AppleStyleSidebar() {
           </div>
         </div>
       </aside>
-
-      {/* İçerik Alanı Örneği (Sidebar'ın nasıl durduğunu görmek için) */}
-      <main className="flex-1 p-8 overflow-y-auto">
-         <div className="max-w-4xl mx-auto space-y-6">
-            <h1 className="text-3xl font-bold text-slate-900 tracking-tight">Dashboard</h1>
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-                <div className="h-40 bg-white rounded-2xl border border-slate-200/60 shadow-sm p-6 flex flex-col justify-between hover:shadow-md transition-shadow">
-                    <div className="text-slate-500 font-medium text-sm">Total Revenue</div>
-                    <div className="text-3xl font-bold text-slate-900">$124,500</div>
-                </div>
-                <div className="h-40 bg-white rounded-2xl border border-slate-200/60 shadow-sm p-6 flex flex-col justify-between hover:shadow-md transition-shadow">
-                    <div className="text-slate-500 font-medium text-sm">Active Projects</div>
-                    <div className="text-3xl font-bold text-slate-900">12</div>
-                </div>
-                <div className="h-40 bg-white rounded-2xl border border-slate-200/60 shadow-sm p-6 flex flex-col justify-between hover:shadow-md transition-shadow">
-                    <div className="text-slate-500 font-medium text-sm">Team Members</div>
-                    <div className="text-3xl font-bold text-slate-900">48</div>
-                </div>
-                <div className="h-40 bg-white rounded-2xl border border-slate-200/60 shadow-sm p-6 flex flex-col justify-between hover:shadow-md transition-shadow">
-                    <div className="text-slate-500 font-medium text-sm">Team Members</div>
-                    <div className="text-3xl font-bold text-slate-900">48</div>
-                </div>
-            </div>
-         </div>
-      </main>
-    </div>
+    </>
   );
 }
