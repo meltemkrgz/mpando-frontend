@@ -26,10 +26,7 @@ function Projects() {
 
   return (
     <div className="flex min-h-screen bg-[#F5F5F7] font-sans text-slate-800">
-      {/* Sidebar */}
       <Sidebar isMobileMenuOpen={isMobileMenuOpen} closeMobileMenu={closeMobileMenu} />
-
-      {/* Main Content */}
       <main className="flex-1 overflow-y-auto h-screen pt-16 md:pt-0">
         <Navbar title="Projeler" toggleMobileMenu={toggleMobileMenu} />
 

@@ -10,7 +10,6 @@ import {
   AlertTriangle, CheckCircle, Clock, MoreHorizontal, DollarSign, Briefcase 
 } from 'lucide-react';
 
-// --- MOCK DATA (Veri Örnekleri) ---
 
 const financialData = [
   { name: 'Oca', income: 40000, expense: 24000 },
@@ -23,9 +22,9 @@ const financialData = [
 ];
 
 const projects = [
-  { id: 1, name: 'Merkez Ofis İnşaatı', location: 'İstanbul, Maslak', progress: 75, start: '01.01.2024', end: '30.09.2024', status: 'Devam Ediyor' },
-  { id: 2, name: 'Vadi Konutları B Blok', location: 'Ankara, Çankaya', progress: 32, start: '15.03.2024', end: '15.03.2025', status: 'Gecikmede' },
-  { id: 3, name: 'Sahil Depo Yenileme', location: 'İzmir, Alsancak', progress: 90, start: '10.02.2024', end: '01.06.2024', status: 'Bitiyor' },
+  { id: 1, name: 'AKSU', location: 'Konum Belirtilmemiş', progress: 75, start: '01.01.2024', end: '30.09.2024', status: 'Devam Ediyor' },
+  { id: 2, name: 'Dolunay Yaşam Merkezi', location: 'Konum Belirtilmemiş', progress: 32, start: '15.03.2024', end: '15.03.2025', status: 'Gecikmede' },
+  { id: 3, name: 'İŞHAN Rezidans', location: 'Konum Belirtilmemiş', progress: 90, start: '10.02.2024', end: '01.06.2024', status: 'Bitiyor' },
 ];
 
 const stockData = [
@@ -102,7 +101,7 @@ function Dashboard() {
       {/* Main Content Area */}
       <main className="flex-1 overflow-y-auto h-screen md:pt-0">
         {/* Top Header & Actions */}
-        <Navbar title="Yönetim Paneli" toggleMobileMenu={toggleMobileMenu} />
+        <Navbar title="Dashboard" toggleMobileMenu={toggleMobileMenu} />
 
         <div className="px-8 pb-12 pt-3 space-y-8">
           
@@ -221,7 +220,7 @@ function Dashboard() {
             {/* Material Purchase Panel */}
             <div className="lg:col-span-2 bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
               <SectionHeader 
-                title="Malzeme Satınalma Talepleri" 
+                title="Malzeme Satın AlmaTalepleri" 
                 action={
                   <button className="flex items-center gap-1 text-slate-500 hover:text-slate-800 transition-colors text-sm font-medium">
                     <Plus size={14} /> Yeni Talep

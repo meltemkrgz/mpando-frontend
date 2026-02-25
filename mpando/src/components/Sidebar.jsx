@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 
-// İkonlar aynı kaldı, ancak stillendirmede renkleri CSS class'ları ile yöneteceğiz.
 const icons = {
   Dashboard: (
     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -102,34 +101,13 @@ const icons = {
 
 const navigationGroups = [
   {
-    title: 'MAIN MENU',
+    title: 'GENEL İŞLEMLER',
     items: [
-      { name: 'Dashboard', icon: icons.Dashboard, isActive: true },
-      { name: 'Projects', icon: icons.Projects, href: "/projects" },
-      { name: 'AI Project Analysis', icon: icons.AI },
-      { name: 'Quantity Takeoff', icon: icons.QuantityTakeoff },
-      { name: 'Inventory', icon: icons.Inventory },
-      { name: 'Purchase Requests', icon: icons.PurchaseRequests },
+      { name: 'Dashboard', icon: icons.Dashboard, isActive: true, href: "/dashboard"},
+      { name: 'Projeler', icon: icons.Projects, href: "/projects" },
+      { name: 'Müşteriler', icon: icons.Personnel, href: "/customers" }
     ]
   },
-  {
-    title: 'PEOPLE & SITES',
-    items: [
-      { name: 'Suppliers', icon: icons.Suppliers },
-      { name: 'Subcontractors', icon: icons.Subcontractors },
-      { name: 'Site Reports', icon: icons.SiteReports },
-      { name: 'Personnel', icon: icons.Personnel },
-    ]
-  },
-  {
-    title: 'FINANCE & LEGAL',
-    items: [
-      { name: 'Accounting', icon: icons.Accounting },
-      { name: 'Contracts', icon: icons.Contracts },
-      { name: 'Invoices', icon: icons.Invoices },
-      { name: 'AI Planning', icon: icons.AI },
-    ]
-  }
 ];
 
 export default function AppleStyleSidebar({ isMobileMenuOpen, closeMobileMenu }) {
@@ -137,7 +115,6 @@ export default function AppleStyleSidebar({ isMobileMenuOpen, closeMobileMenu })
 
   const toggleDesktopCollapse = () => setIsSidebarCollapsed(!isSidebarCollapsed);
 
-  // width helper: mobile always 280px, but on md screens shrink when collapsed
   const sidebarWidthClass = isSidebarCollapsed ? 'w-[280px] md:w-20' : 'w-[280px] md:w-[280px]';
 
   return (
@@ -161,8 +138,14 @@ export default function AppleStyleSidebar({ isMobileMenuOpen, closeMobileMenu })
         {/* Header Section */}
         <div className={`flex items-center ${isSidebarCollapsed ? 'justify-center' : 'justify-between px-6'} h-16 mb-2`}>
           <div className="flex items-center gap-3">
-            <div className={`rounded-xl bg-gradient-to-br from-slate-900 via-slate-700 to-slate-800 text-white flex items-center justify-center font-bold shadow-lg shadow-slate-900/20 transition-all duration-300 ${isSidebarCollapsed ? 'w-10 h-10 text-lg' : 'w-8 h-8 text-sm'}`}>
-              M
+            <div
+                className={`rounded-xl bg-white text-slate-900 flex items-center justify-center font-bold shadow-lg shadow-slate-900/20 transition-all duration-300 ${isSidebarCollapsed ? 'w-10 h-10 text-lg' : 'w-8 h-8 text-sm'}`}
+>
+                <img 
+                    src="../public/logo.png" 
+                    alt="User" 
+                    className="w-full h-full object-cover"
+                />
             </div>
             {!isSidebarCollapsed && (
               <span className="text-slate-900 font-bold text-lg tracking-tight">MPANDO</span>
@@ -209,22 +192,9 @@ export default function AppleStyleSidebar({ isMobileMenuOpen, closeMobileMenu })
               </div>
               <input 
                 type="text" 
-                placeholder="Search..." 
+                placeholder="Ara..." 
                 className="w-full pl-9 pr-3 py-1.5 bg-slate-100/80 border-transparent focus:bg-white border focus:border-blue-400/50 rounded-lg text-sm text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/10 transition-all duration-200"
               />
-            </div>
-
-            {/* Project Dropdown */}
-            <div className="group relative bg-white border border-slate-200/80 rounded-xl p-3 shadow-sm hover:shadow-md hover:border-slate-300 cursor-pointer transition-all duration-200">
-              <div className="flex items-center justify-between">
-                <div>
-                   <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Active Project</p>
-                   <p className="text-sm font-semibold text-slate-800 truncate">Headquarters Build</p>
-                </div>
-                <div className="text-slate-400 group-hover:text-slate-600 transition-colors">
-                  {icons.ChevronDown}
-                </div>
-              </div>
             </div>
           </div>
         )}
@@ -281,42 +251,11 @@ export default function AppleStyleSidebar({ isMobileMenuOpen, closeMobileMenu })
           <ul className="space-y-1 mb-3">
             <li>
               <a href="#" className={`flex items-center gap-3 px-3 py-2 rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-900 transition-colors ${isSidebarCollapsed ? 'justify-center' : ''}`}>
-                <span className="group-hover:text-slate-600">{icons.Settings}</span>
-                {!isSidebarCollapsed && <span className="text-sm">Settings</span>}
-              </a>
-            </li>
-            <li>
-              <a href="#" className={`flex items-center gap-3 px-3 py-2 rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-900 transition-colors ${isSidebarCollapsed ? 'justify-center' : ''}`}>
                  <span className="group-hover:text-slate-600">{icons.Help}</span>
-                {!isSidebarCollapsed && <span className="text-sm">Support</span>}
+                {!isSidebarCollapsed && <span className="text-sm">Destek ve Yardım</span>}
               </a>
             </li>
           </ul>
-
-          {/* User Profile - Card Style */}
-          <div className={`flex items-center gap-3 p-2 rounded-xl border border-transparent hover:border-slate-200 hover:bg-white hover:shadow-sm cursor-pointer transition-all duration-200 ${isSidebarCollapsed ? 'justify-center' : ''}`}>
-            <div className="relative">
-                <div className="w-9 h-9 rounded-full bg-slate-200 flex-shrink-0 overflow-hidden ring-2 ring-white shadow-sm">
-                <img 
-                    src="https://api.dicebear.com/7.x/notionists/svg?seed=Anthony" 
-                    alt="User" 
-                    className="w-full h-full object-cover"
-                />
-                </div>
-                <div className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 border-2 border-white rounded-full"></div>
-            </div>
-            {!isSidebarCollapsed && (
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold text-slate-800 truncate">Anthony M.</p>
-                <p className="text-xs text-slate-500 truncate">Admin</p>
-              </div>
-            )}
-             {!isSidebarCollapsed && (
-                <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 9l4-4 4 4m0 6l-4 4-4-4" />
-                </svg>
-             )}
-          </div>
         </div>
       </aside>
     </>
