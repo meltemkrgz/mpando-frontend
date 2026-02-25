@@ -77,7 +77,7 @@ function Navbar({ title = "Genel Bakış", toggleMobileMenu }) {
                 className="flex items-center gap-2 pl-2 pr-1 py-1 rounded-full hover:bg-slate-100 border border-transparent hover:border-slate-200 transition-all"
               >
                 <img 
-                  src="../public/profile.png" 
+                  src="/profile.png" 
                   alt="User" 
                   className="w-8 h-8 rounded-full bg-slate-200 ring-2 ring-white shadow-sm object-cover"
                 />

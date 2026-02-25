@@ -142,7 +142,7 @@ export default function AppleStyleSidebar({ isMobileMenuOpen, closeMobileMenu })
                 className={`rounded-xl bg-white text-slate-900 flex items-center justify-center font-bold shadow-lg shadow-slate-900/20 transition-all duration-300 ${isSidebarCollapsed ? 'w-10 h-10 text-lg' : 'w-8 h-8 text-sm'}`}
 >
                 <img 
-                    src="../public/logo.png" 
+                    src="/logo.png" 
                     alt="User" 
                     className="w-full h-full object-cover"
                 />
