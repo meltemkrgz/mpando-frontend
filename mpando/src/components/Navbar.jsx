@@ -6,15 +6,16 @@ import {
   HelpCircle, 
   ChevronDown,
   Plus,
-  Menu
+  Menu,
+  Sun,
+  Moon
 } from 'lucide-react';
 
 function Navbar({ title = "Genel Bakış", toggleMobileMenu }) {
-  // ÖNEMLİ DÜZELTME: useState ve useRef her zaman fonksiyon bileşeninin İÇİNDE olmalıdır.
   const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [isDarkMode, setIsDarkMode] = useState(false);
   const profileDropdownRef = useRef(null);
 
-  // Sayfanın boşluğuna tıklanınca menüyü kapatma işlemi
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (profileDropdownRef.current && !profileDropdownRef.current.contains(event.target)) {
@@ -29,10 +30,7 @@ function Navbar({ title = "Genel Bakış", toggleMobileMenu }) {
   return (
     <nav className="sticky top-0 z-40 w-full bg-white/80 backdrop-blur-md border-b border-slate-200 transition-all duration-300">
       <div className="flex items-center justify-between px-6 py-4">
-        
-        {/* SOL KISIM: Hamburger (mobil) + Başlık */}
         <div className="flex items-center gap-2">
-          {/* Mobil hamburger açma düğmesi */}
           <button
             onClick={toggleMobileMenu}
             className="md:hidden p-2 text-slate-500 hover:text-slate-800 rounded-lg transition-colors"
@@ -49,28 +47,42 @@ function Navbar({ title = "Genel Bakış", toggleMobileMenu }) {
             </p>
           </div>
         </div>
-
-        {/* SAĞ KISIM: Bildirim, Yeni Butonu ve Profil */}
         <div className="flex items-center gap-2 md:gap-4">
           
-          <div className="h-6 w-px bg-slate-200 mx-2 hidden md:block"></div>
-
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-2 md:gap-3">
+            <div className="flex items-center bg-slate-100/80 p-0.5 rounded-full border border-slate-200/60 shadow-inner hidden sm:flex">
+              <button
+                onClick={() => setIsDarkMode(false)}
+                className={`p-1.5 rounded-full transition-all duration-200 ${
+                  !isDarkMode 
+                    ? 'bg-white text-amber-500 shadow-sm ring-1 ring-slate-200/50' 
+                    : 'text-slate-400 hover:text-slate-500'
+                }`}
+                title="Aydınlık Tema"
+              >
+                <Sun className="w-4 h-4" />
+              </button>
+              
+              <button
+                onClick={() => setIsDarkMode(true)}
+                className={`p-1.5 rounded-full transition-all duration-200 ${
+                  isDarkMode 
+                    ? 'bg-white text-indigo-500 shadow-sm ring-1 ring-slate-200/50' 
+                    : 'text-slate-400 hover:text-slate-500'
+                }`}
+                title="Karanlık Tema"
+              >
+                <Moon className="w-4 h-4" />
+              </button>
+            </div>
+            <div className="h-6 w-px bg-slate-200 hidden sm:block"></div>
             <button className="relative p-2 text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors group">
               <Bell className="w-5 h-5" />
               <span className="absolute top-2 right-2.5 w-2 h-2 bg-red-500 rounded-full border border-white animate-pulse"></span>
             </button>
           </div>
 
-          <div className="h-6 w-px bg-slate-200 mx-2"></div>
-
           <div className="flex items-center gap-3">
-            <button className="flex items-center justify-center w-8 h-8 md:w-auto md:h-auto md:px-3 md:py-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-sm font-medium transition-all shadow-lg shadow-slate-900/10">
-              <Plus className="w-4 h-4 md:mr-1.5" />
-              <span className="hidden md:inline">Yeni</span>
-            </button>
-
-            {/* ---- PROFIL KISMI BAŞLANGICI ---- */}
             <div className="relative" ref={profileDropdownRef}>
               <button 
                 onClick={() => setIsProfileOpen(!isProfileOpen)}
@@ -84,8 +96,6 @@ function Navbar({ title = "Genel Bakış", toggleMobileMenu }) {
                 <span className="hidden md:block text-sm font-semibold text-slate-700">Mike J.</span>
                 <ChevronDown className={`hidden md:block w-4 h-4 text-slate-400 transition-transform duration-200 ${isProfileOpen ? 'rotate-180' : ''}`} />
               </button>
-
-              {/* AÇILAN DROPDOWN MENÜSÜ */}
               {isProfileOpen && (
                 <div className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-lg border border-slate-100 py-1 z-50">
                   <div className="px-4 py-2 border-b border-slate-100 mb-1">
@@ -109,8 +119,7 @@ function Navbar({ title = "Genel Bakış", toggleMobileMenu }) {
                 </div>
               )}
             </div>
-            {/* ---- PROFIL KISMI SONU ---- */}
-
+            
           </div>
         </div>
       </div>
