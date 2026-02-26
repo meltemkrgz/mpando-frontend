@@ -2,13 +2,15 @@ import React from 'react';
 import Sidebar from '../components/Sidebar';
 import Navbar from '../components/Navbar';
 import { useAuth } from "../context/AuthContext";
-import { 
-  AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, 
-  BarChart, Bar, Legend, Cell, PieChart, Pie 
+import {
+  AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
+  BarChart, Bar, Legend, Cell, PieChart, Pie
 } from 'recharts';
-import { 
-  Plus, FileText, Users, Package, ArrowUpRight, ArrowDownRight, 
-  AlertTriangle, CheckCircle, Clock, MoreHorizontal, DollarSign, Briefcase 
+import {
+  Plus, FileText, Users, Package, ArrowUpRight, ArrowDownRight,
+  AlertTriangle, CheckCircle, Clock, MoreHorizontal, DollarSign, Briefcase,
+  // projects.jsx'ten gelen ikonlar:
+  AlertCircle, Hourglass // CheckCircle zaten var
 } from 'lucide-react';
 
 
@@ -26,6 +28,8 @@ const projects = [
   { id: 1, name: 'AKSU', location: 'Konum Belirtilmemiş', progress: 75, start: '01.01.2024', end: '30.09.2024', status: 'Devam Ediyor' },
   { id: 2, name: 'Dolunay Yaşam Merkezi', location: 'Konum Belirtilmemiş', progress: 32, start: '15.03.2024', end: '15.03.2025', status: 'Gecikmede' },
   { id: 3, name: 'İŞHAN Rezidans', location: 'Konum Belirtilmemiş', progress: 90, start: '10.02.2024', end: '01.06.2024', status: 'Bitiyor' },
+  // Dashboard'daki veri setinize "Tamamlandı" statüsünü test etmek isterseniz ekleyebilirsiniz:
+  // { id: 4, name: 'Yeni Rezidans', location: 'Konum Belirtilmemiş', progress: 100, start: '01.01.2023', end: '01.01.2024', status: 'Tamamlandı' },
 ];
 
 const stockData = [
@@ -52,6 +56,40 @@ const payments = [
   { recipient: 'Ege Tesisat', amount: '₺45,200', date: '23 May', status: 'Bekliyor' },
   { recipient: 'Mavi Nakliyat', amount: '₺12,000', date: '22 May', status: 'Ödendi' },
 ];
+
+
+// --- Yardımcı Fonksiyonlar (projects.jsx'ten kopyalandı) ---
+const getStatusClasses = (status) => {
+  switch (status) {
+    case 'Devam Ediyor': return 'bg-blue-50 text-blue-700 border-blue-200';
+    case 'Gecikmede': return 'bg-red-50 text-red-700 border-red-200';
+    case 'Bitiyor': return 'bg-yellow-50 text-yellow-700 border-yellow-200';
+    case 'Tamamlandı': return 'bg-green-50 text-green-700 border-green-200';
+    default: return 'bg-slate-50 text-slate-700 border-slate-200';
+  }
+};
+
+const getStatusIcon = (status) => {
+  switch (status) {
+    case 'Devam Ediyor': return <Clock size={14} />;
+    case 'Gecikmede': return <AlertCircle size={14} />;
+    case 'Bitiyor': return <Hourglass size={14} />;
+    case 'Tamamlandı': return <CheckCircle size={14} />;
+    default: return null;
+  }
+};
+
+// İlerleme çubuğu için renk belirleyici fonksiyon
+const getProgressBarColor = (status) => {
+  switch (status) {
+    case 'Devam Ediyor': return 'bg-blue-600';
+    case 'Gecikmede': return 'bg-red-500';
+    case 'Bitiyor': return 'bg-yellow-500'; // Bitiyor için sarı
+    case 'Tamamlandı': return 'bg-green-600';
+    default: return 'bg-slate-500';
+  }
+};
+
 
 // --- COMPONENTS ---
 
@@ -107,50 +145,50 @@ function Dashboard() {
         <Navbar title="Dashboard" toggleMobileMenu={toggleMobileMenu} />
 
         <div className="px-8 pb-12 pt-3 space-y-8">
-          
+
           {/* 1. SECTION: SUMMARY CARDS */}
           <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <StatCard 
-              title="Aktif Projeler" 
-              value="8" 
+            <StatCard
+              title="Aktif Projeler"
+              value="8"
               subtext="Toplam 12 proje"
-              icon={<Briefcase size={20} />} 
-              trend="+2" 
-              trendUp={true} 
+              icon={<Briefcase size={20} />}
+              trend="+2"
+              trendUp={true}
             />
-            <StatCard 
-              title="Toplam Gelir" 
-              value="₺2.4M" 
+            <StatCard
+              title="Toplam Gelir"
+              value="₺2.4M"
               subtext="Bu ay"
-              icon={<DollarSign size={20} />} 
-              trend="%12" 
-              trendUp={true} 
+              icon={<DollarSign size={20} />}
+              trend="%12"
+              trendUp={true}
             />
-            <StatCard 
-              title="Toplam Gider" 
-              value="₺850K" 
+            <StatCard
+              title="Toplam Gider"
+              value="₺850K"
               subtext="Bu ay"
-              icon={<ArrowDownRight size={20} />} 
-              trend="%5" 
-              trendUp={false} 
+              icon={<ArrowDownRight size={20} />}
+              trend="%5"
+              trendUp={false}
             />
-            <StatCard 
-              title="Kritik Stok" 
-              value="3" 
+            <StatCard
+              title="Kritik Stok"
+              value="3"
               subtext="Ürün tükenmek üzere"
-              icon={<AlertTriangle size={20} />} 
+              icon={<AlertTriangle size={20} />}
               alert={true}
             />
           </div>
 
           {/* 2. SECTION: PROJECTS & CASH FLOW */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            
-            {/* Project List */}
+
+            {/* Project List (BURASI GÜNCELLENDİ) */}
             <div className="lg:col-span-1 bg-white rounded-2xl border border-slate-200 shadow-sm p-6 flex flex-col">
-              <SectionHeader 
-                title="Proje Durumları" 
-                action={<button className="text-blue-600 text-sm font-medium hover:underline">Tümü</button>} 
+              <SectionHeader
+                title="Proje Durumları"
+                action={<button onClick={() => window.location.href = '/projects'} className="text-blue-600 text-sm font-medium hover:underline">Tümü</button>}
               />
               <div className="space-y-5 overflow-y-auto pr-2 max-h-[300px] scrollbar-hide">
                 {projects.map((project) => (
@@ -160,19 +198,15 @@ function Dashboard() {
                         <h4 className="font-semibold text-slate-800 text-sm">{project.name}</h4>
                         <p className="text-xs text-slate-400 mt-0.5">{project.location}</p>
                       </div>
-                      <span className={`text-[10px] font-bold px-2 py-1 rounded-full border ${
-                        project.status === 'Gecikmede' ? 'bg-red-50 text-red-600 border-red-100' : 
-                        project.status === 'Bitiyor' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 
-                        'bg-blue-50 text-blue-600 border-blue-100'
-                      }`}>
-                        {project.status}
+                      {/* STATÜS BİLGİSİ: projects.jsx'teki gibi */}
+                      <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium border ${getStatusClasses(project.status)}`}>
+                        {getStatusIcon(project.status)} {project.status}
                       </span>
                     </div>
                     <div className="w-full bg-slate-100 rounded-full h-1.5 mb-2 overflow-hidden">
-                      <div 
-                        className={`h-1.5 rounded-full ${
-                          project.status === 'Gecikmede' ? 'bg-red-500' : 'bg-blue-600'
-                        }`} 
+                      {/* İLERLEME ÇUBUĞU RENGİ: projects.jsx'teki gibi */}
+                      <div
+                        className={`h-1.5 rounded-full ${getProgressBarColor(project.status)}`}
                         style={{ width: `${project.progress}%` }}
                       ></div>
                     </div>
@@ -205,7 +239,7 @@ function Dashboard() {
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
                     <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#64748b', fontSize: 12}} dy={10} />
                     <YAxis axisLine={false} tickLine={false} tick={{fill: '#64748b', fontSize: 12}} tickFormatter={(value) => `₺${value/1000}k`} />
-                    <Tooltip 
+                    <Tooltip
                       contentStyle={{ backgroundColor: '#fff', borderRadius: '12px', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' }}
                       itemStyle={{ fontSize: '12px', fontWeight: 600 }}
                     />
@@ -219,11 +253,11 @@ function Dashboard() {
 
           {/* 3. SECTION: MATERIALS & STOCK */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            
+
             {/* Material Purchase Panel */}
             <div className="lg:col-span-2 bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
-              <SectionHeader 
-                title="Malzeme Satın AlmaTalepleri" 
+              <SectionHeader
+                title="Malzeme Satın AlmaTalepleri"
                 action={
                   <button className="flex items-center gap-1 text-slate-500 hover:text-slate-800 transition-colors text-sm font-medium">
                     <Plus size={14} /> Yeni Talep
@@ -281,7 +315,7 @@ function Dashboard() {
                 <h2 className="text-lg font-bold text-slate-800">Stok Durumu</h2>
                 <button className="text-slate-400 hover:text-slate-600"><MoreHorizontal size={20} /></button>
               </div>
-              
+
               <div className="w-full h-[220px] mt-8">
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
@@ -299,14 +333,14 @@ function Dashboard() {
                         <Cell key={`cell-${index}`} fill={entry.color} />
                       ))}
                     </Pie>
-                    <Tooltip 
+                    <Tooltip
                       contentStyle={{ backgroundColor: '#fff', borderRadius: '8px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
                       itemStyle={{ color: '#1e293b' }}
                     />
                   </PieChart>
                 </ResponsiveContainer>
               </div>
-              
+
               {/* Custom Legend */}
               <div className="grid grid-cols-2 gap-x-8 gap-y-2 mt-2 w-full px-4">
                 {stockData.map((item, idx) => (
@@ -322,14 +356,14 @@ function Dashboard() {
 
           {/* 4. SECTION: TIMELINE & PAYMENTS */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            
+
             {/* Recent Activities */}
             <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
               <SectionHeader title="Son Aktiviteler" />
               <div className="relative pl-2">
                 {/* Dikey Çizgi */}
                 <div className="absolute left-[19px] top-2 bottom-4 w-[1px] bg-slate-100"></div>
-                
+
                 <div className="space-y-6">
                   {activities.map((act) => (
                     <div key={act.id} className="relative flex gap-4 group">
@@ -351,8 +385,8 @@ function Dashboard() {
 
             {/* Recent Payments */}
             <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
-              <SectionHeader 
-                title="Son Ödemeler" 
+              <SectionHeader
+                title="Son Ödemeler"
                 action={<button className="text-blue-600 text-sm font-medium hover:underline">Tümünü Gör</button>}
               />
               <div className="space-y-3">
@@ -377,7 +411,7 @@ function Dashboard() {
                     </div>
                   </div>
                 ))}
-                
+
                 <button className="w-full mt-2 py-3 border border-dashed border-slate-300 rounded-xl text-slate-500 text-sm font-medium hover:bg-slate-50 hover:border-slate-400 transition-all flex items-center justify-center gap-2">
                   <Plus size={16} />
                   Yeni Ödeme Ekle

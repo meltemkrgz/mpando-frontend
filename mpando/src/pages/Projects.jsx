@@ -2,17 +2,17 @@ import React, { useState, useRef, useEffect } from 'react';
 import Sidebar from '../components/Sidebar';
 import Navbar from '../components/Navbar';
 import ProjectEditModal from '../modals/ProjectEditModal'; // Düzenleme modalı ayrı dosya
-import { 
-  Plus, 
-  Trash2, 
-  CheckSquare, 
-  Pencil, 
-  X, 
-  ChevronDown, 
+import {
+  Plus,
+  Trash2,
+  CheckSquare,
+  Pencil,
+  X,
+  ChevronDown,
   Columns,
-  Clock,      
-  AlertCircle, 
-  Hourglass,   
+  Clock,
+  AlertCircle,
+  Hourglass,
   CheckCircle,
   Filter
 } from 'lucide-react';
@@ -20,11 +20,12 @@ import {
 // --- Yardımcı Fonksiyonlar ---
 const getStatusClasses = (status) => {
   switch (status) {
-    case 'Devam Ediyor': return 'bg-blue-50 text-blue-700 border-blue-200';
-    case 'Gecikmede': return 'bg-red-50 text-red-700 border-red-200';
-    case 'Bitiyor': return 'bg-yellow-50 text-yellow-700 border-yellow-200';
-    case 'Tamamlandı': return 'bg-green-50 text-green-700 border-green-200';
-    default: return 'bg-slate-50 text-slate-700 border-slate-200';
+    // BURASI GÜNCELLENDİ: text-[10px], px-2 py-1 ve font-bold eklendi
+    case 'Devam Ediyor': return 'bg-blue-50 text-blue-700 border-blue-200 text-[10px] font-bold px-2 py-1';
+    case 'Gecikmede': return 'bg-red-50 text-red-700 border-red-200 text-[10px] font-bold px-2 py-1';
+    case 'Bitiyor': return 'bg-yellow-50 text-yellow-700 border-yellow-200 text-[10px] font-bold px-2 py-1';
+    case 'Tamamlandı': return 'bg-green-50 text-green-700 border-green-200 text-[10px] font-bold px-2 py-1';
+    default: return 'bg-slate-50 text-slate-700 border-slate-200 text-[10px] font-bold px-2 py-1';
   }
 };
 
@@ -40,10 +41,10 @@ const getStatusIcon = (status) => {
 
 // --- Örnek Projeler ---
 const initialProjectList = [
-  { id: 1, company: 'ABC İnşaat', unit: '18', address: 'İstanbul, Maslak', status: 'Devam Ediyor', created_at: '01.01.2024', created_by: 'Ali Yılmaz', description: 'Maslak bölgesinde lüks konut projesi.', startDate: '2023-01-10', endDate: '2024-12-31', contractor: 'Ali Yılmaz' },
-  { id: 2, company: 'XYZ Yapı', unit: '32', address: 'Ankara, Çankaya', status: 'Gecikmede', created_at: '15.03.2024', created_by: 'Ahmet Korkmaz', description: 'Çankaya\'da ofis ve AVM kompleksi.', startDate: '2022-02-01', endDate: '2024-06-01', contractor: 'Ahmet Korkmaz' },
-  { id: 3, company: 'LMN Proje', unit: '14', address: 'İzmir, Alsancak', status: 'Bitiyor', created_at: '10.02.2024', created_by: 'Ali Yılmaz', description: 'Alsancak sahil şeridinde butik otel.', startDate: '2023-05-15', endDate: '2024-08-15', contractor: 'Ali Yılmaz' },
-  { id: 4, company: 'TGR Konut', unit: '6', address: 'Antalya, Lara', status: 'Tamamlandı', created_at: '20.06.2023', created_by: 'Ayşe Demir', description: 'Lara plajına yakın villa projesi.', startDate: '2022-03-01', endDate: '2023-05-20', contractor: 'Veli Can' },
+  { id: 1, company: 'AKSU', unit: '18', address: '', status: 'Devam Ediyor', created_at: '01.01.2024', created_by: 'Ali Yılmaz', description: '', startDate: '2023-01-10', endDate: '2024-12-31', contractor: 'Ali Yılmaz' },
+  { id: 2, company: 'Dolunay Yaşam Merkezi', unit: '32', address: '', status: 'Gecikmede', created_at: '15.03.2024', created_by: 'Ahmet Korkmaz', description: '', startDate: '2022-02-01', endDate: '2024-06-01', contractor: 'Ahmet Korkmaz' },
+  { id: 3, company: 'İŞHAN Rezidans', unit: '14', address: '', status: 'Bitiyor', created_at: '10.02.2024', created_by: 'Ali Yılmaz', description: '', startDate: '2023-05-15', endDate: '2024-08-15', contractor: 'Ali Yılmaz' },
+  { id: 4, company: 'İSKAMALL Yaşam Merkezi ', unit: '6', address: '', status: 'Tamamlandı', created_at: '20.06.2023', created_by: 'Ayşe Demir', description: '', startDate: '2022-03-01', endDate: '2023-05-20', contractor: 'Veli Can' },
 ];
 
 const initialNewProjectData = { company: '', unit: '', address: '', status: 'Devam Ediyor', description: '', startDate: '', endDate: '', contractor: '' };
@@ -53,6 +54,7 @@ const optionalColumns = [
   { key: 'startDate', label: 'Başlangıç Tarihi' },
   { key: 'endDate', label: 'Bitiş Tarihi' },
   { key: 'contractor', label: 'Müteahhit' },
+  { key: 'created_at', label: 'Oluşturulma Tarihi' }, // BURASI EKLENDİ
 ];
 
 // --- Section Header Bileşeni ---
@@ -60,7 +62,7 @@ function SectionHeader({ title, action }) {
   return (
     <div className="flex items-center justify-between mb-6">
       <h2 className="text-lg font-bold text-slate-800">{title}</h2>
-      <div className="flex items-center gap-2">{action}</div>
+      <div className="flex flex-wrap items-center gap-2">{action}</div>
     </div>
   );
 }
@@ -80,6 +82,7 @@ function Projects() {
   const [editFormData, setEditFormData] = useState(null);
 
   const [isColumnDropdownOpen, setIsColumnDropdownOpen] = useState(false);
+  // `created_at` varsayılan olarak `visibleColumns` içinde olmayacak, bu da başlangıçta gizli kalmasını sağlar.
   const [visibleColumns, setVisibleColumns] = useState([]);
   const dropdownRef = useRef(null);
 
@@ -150,23 +153,24 @@ function Projects() {
       <main className="flex-1 overflow-y-auto h-screen pt-16 md:pt-0 relative">
         <Navbar title="Projeler" toggleMobileMenu={toggleMobileMenu} />
 
-        <div className="px-8 pb-12 pt-4 space-y-8">
+        {/* Ana içerik alanının padding'i küçük ekranlarda ayarlandı */}
+        <div className="px-4 sm:px-6 md:px-8 pb-12 pt-4 space-y-8">
           <SectionHeader
             title="Proje Listesi"
             action={
               <>
-                <button 
-                  onClick={handleOpenFilter} 
+                <button
+                  onClick={handleOpenFilter}
                   className="flex items-center gap-1.5 text-sm font-medium text-slate-600 bg-white hover:bg-slate-50 border border-slate-200 shadow-sm px-3 py-1.5 rounded-lg transition-colors"
                 >
-                  <Filter size={14} /> Filtrele
+                  <Filter size={14} />
                 </button>
                 <div className="relative" ref={dropdownRef}>
-                  <button 
+                  <button
                     onClick={() => setIsColumnDropdownOpen(prev => !prev)}
                     className="flex items-center gap-1.5 text-sm font-medium text-slate-600 bg-white hover:bg-slate-50 border border-slate-200 shadow-sm px-3 py-1.5 rounded-lg transition-colors"
                   >
-                    <Columns size={14} /> Sütunlar
+                    <Columns size={14} />
                   </button>
                   {isColumnDropdownOpen && (
                     <div className="absolute top-full right-0 mt-2 w-48 bg-white border border-slate-200 rounded-lg shadow-lg z-20 animate-in fade-in-25">
@@ -191,12 +195,12 @@ function Projects() {
 
           <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
             {selectedProjects.length > 0 && (
-              <div className="flex items-center justify-between border border-slate-200 p-3 rounded-xl mb-4 animate-in fade-in slide-in-from-top-2 duration-200">
-                <div className="flex items-center gap-3">
+              <div className="flex flex-wrap items-center justify-between border border-slate-200 p-3 rounded-xl mb-4 animate-in fade-in slide-in-from-top-2 duration-200">
+                <div className="flex items-center gap-3 mb-2 sm:mb-0">
                   <span className="flex items-center justify-center bg-blue-600 text-white w-6 h-6 rounded-full text-xs font-bold">{selectedProjects.length}</span>
                   <span className="text-sm font-medium text-slate-700">proje seçildi</span>
                 </div>
-                <div className="flex items-center gap-2 sm:gap-4">
+                <div className="flex flex-wrap items-center gap-2 sm:gap-4">
                   <button onClick={handleSelectAll} className="flex items-center gap-1.5 text-sm font-medium text-blue-700 bg-blue-50 hover:bg-blue-100 transition-colors px-3 py-1.5 rounded-lg">
                     <CheckSquare size={16} />
                     <span className="hidden sm:inline">{selectedProjects.length === projects.length ? 'Seçimi Temizle' : 'Tümünü Seç'}</span>
@@ -210,26 +214,28 @@ function Projects() {
             )}
 
             <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse">
+              <table className="w-full text-left border-collapse min-w-max">
                 <thead>
                   <tr className="text-xs font-semibold text-slate-400 border-b border-slate-100">
-                    <th className="pb-3 pl-2 w-10"></th>
-                    <th className="pb-3">Proje Adı</th>
-                    <th className="pb-3">Durum</th>
-                    <th className="pb-3">Ünite</th>
-                    {visibleColumns.includes('description') && <th className="pb-3">Açıklama</th>}
-                    {visibleColumns.includes('startDate') && <th className="pb-3">Başlangıç Tarihi</th>}
-                    {visibleColumns.includes('endDate') && <th className="pb-3">Bitiş Tarihi</th>}
-                    {visibleColumns.includes('contractor') && <th className="pb-3">Müteahhit</th>}
-                    <th className="pb-3">Oluşturan</th>
-                    <th className="pb-3">Oluşturulma Tarihi</th>
-                    <th className="pb-3 text-center">İşlemler</th>
+                    <th className="pb-3 pl-2 w-10"></th> {/* Checkbox sütunu */}
+                    <th className="pb-3 px-4">Proje Adı</th>
+                    <th className="pb-3 px-4">Durum</th>
+                    <th className="pb-3 px-4">Ünite</th>
+                    {visibleColumns.includes('description') && <th className="pb-3 px-4">Açıklama</th>}
+                    {visibleColumns.includes('startDate') && <th className="pb-3 px-4">Başlangıç Tarihi</th>}
+                    {visibleColumns.includes('endDate') && <th className="pb-3 px-4">Bitiş Tarihi</th>}
+                    {visibleColumns.includes('contractor') && <th className="pb-3 px-4">Müteahhit</th>}
+                    <th className="pb-3 px-4">Oluşturan</th>
+                    {/* Oluşturulma Tarihi artık koşullu */}
+                    {visibleColumns.includes('created_at') && <th className="pb-3 px-4">Oluşturulma Tarihi</th>}
+                    <th className="pb-3 px-4 text-center">İşlemler</th>
                   </tr>
                 </thead>
                 <tbody className="text-sm">
                   {projects.length === 0 ? (
                     <tr>
-                      <td colSpan={7 + visibleColumns.length} className="py-8 text-center text-slate-500">
+                      {/* colSpan değeri güncellendi. Artık 6 sabit sütun var + görünür isteğe bağlı sütun sayısı. */}
+                      <td colSpan={6 + visibleColumns.length} className="py-8 text-center text-slate-500">
                         Gösterilecek proje bulunamadı.
                       </td>
                     </tr>
@@ -239,20 +245,21 @@ function Projects() {
                         <td className="py-4 pl-2">
                           <input type="checkbox" checked={selectedProjects.includes(proj.id)} onChange={() => handleSelectProject(proj.id)} className="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer accent-blue-600" />
                         </td>
-                        <td className="py-4 font-medium text-slate-700">{proj.company}</td>
-                        <td className="py-4 text-slate-700">
-                          <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium border ${getStatusClasses(proj.status)}`}>
+                        <td className="py-4 px-4 font-medium text-slate-700">{proj.company}</td>
+                        <td className="py-4 px-4 text-slate-700">
+                          <span className={`inline-flex items-center gap-1 border rounded-full ${getStatusClasses(proj.status)}`}>
                             {getStatusIcon(proj.status)} {proj.status}
                           </span>
                         </td>
-                        <td className="py-4 text-slate-700">{proj.unit}</td>
-                        {visibleColumns.includes('description') && <td className="py-4 text-slate-500 max-w-xs truncate" title={proj.description}>{proj.description}</td>}
-                        {visibleColumns.includes('startDate') && <td className="py-4 text-slate-500">{proj.startDate}</td>}
-                        {visibleColumns.includes('endDate') && <td className="py-4 text-slate-500">{proj.endDate}</td>}
-                        {visibleColumns.includes('contractor') && <td className="py-4 text-slate-500">{proj.contractor}</td>}
-                        <td className="py-4 text-slate-500">{proj.created_by}</td>
-                        <td className="py-4 text-slate-500">{proj.created_at}</td>
-                        <td className="py-4 text-center">
+                        <td className="py-4 px-4 text-slate-700">{proj.unit}</td>
+                        {visibleColumns.includes('description') && <td className="py-4 px-4 text-slate-500 max-w-xs truncate" title={proj.description}>{proj.description}</td>}
+                        {visibleColumns.includes('startDate') && <td className="py-4 px-4 text-slate-500">{proj.startDate}</td>}
+                        {visibleColumns.includes('endDate') && <td className="py-4 px-4 text-slate-500">{proj.endDate}</td>}
+                        {visibleColumns.includes('contractor') && <td className="py-4 px-4 text-slate-500">{proj.contractor}</td>}
+                        <td className="py-4 px-4 text-slate-500">{proj.created_by}</td>
+                        {/* Oluşturulma Tarihi artık koşullu */}
+                        {visibleColumns.includes('created_at') && <td className="py-4 px-4 text-slate-500">{proj.created_at}</td>}
+                        <td className="py-4 px-4 text-center">
                           <button onClick={() => openEditModal(proj)} className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 text-sm font-medium text-slate-600 bg-white border border-slate-200 hover:text-blue-600 hover:border-blue-200 hover:bg-blue-50 rounded-lg transition-all shadow-sm">
                             <Pencil size={14} /> Düzenle
                           </button>
@@ -333,7 +340,6 @@ function Projects() {
             </div>
           </div>
         )}
-
       </main>
     </div>
   );
