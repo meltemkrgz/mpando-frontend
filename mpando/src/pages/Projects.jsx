@@ -95,6 +95,7 @@ function Projects() {
   const [selectedProjects, setSelectedProjects] = useState([]);
   const { user } = useAuth();
 
+  const [loading, setLoading] = useState(true);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [newProjectData, setNewProjectData] = useState(initialNewProjectData);
 
@@ -125,7 +126,12 @@ function Projects() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  useEffect(() => {
+    fetchProjects();
+  }, [user]);
+
   const fetchProjects = async () => {
+    setLoading(true);
     try {
       if (user && user.company_id) {
         // Müteahhitleri (Site Engineers) Çekme
@@ -195,6 +201,8 @@ function Projects() {
       }
     } catch (err) {
       console.error("Projeler sayfası API hatası: ", err);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -440,7 +448,19 @@ function Projects() {
                   </tr>
                 </thead>
                 <tbody className="text-sm">
-                  {filteredProjects.length === 0 ? (
+                  {loading ? (
+                    [...Array(5)].map((_, i) => (
+                      <tr key={i} className="animate-pulse border-b border-slate-50">
+                        <td className="py-4 pl-2"><div className="w-4 h-4 bg-slate-100 rounded"></div></td>
+                        <td className="py-4 px-4"><div className="h-4 bg-slate-100 rounded w-32"></div></td>
+                        <td className="py-4 px-4"><div className="h-6 bg-slate-50 rounded-full w-20"></div></td>
+                        <td className="py-4 px-4"><div className="h-2 bg-slate-100 rounded w-full"></div></td>
+                        <td className="py-4 px-4"><div className="h-4 bg-slate-50 rounded w-12"></div></td>
+                        <td className="py-4 px-4"><div className="h-4 bg-slate-100 rounded w-24"></div></td>
+                        <td className="py-4 px-4 text-center"><div className="h-8 bg-slate-50 rounded-lg w-16 mx-auto"></div></td>
+                      </tr>
+                    ))
+                  ) : filteredProjects.length === 0 ? (
                     <tr>
                       <td colSpan={6 + visibleColumns.length} className="py-8 text-center text-slate-500">
                         {selectedStatusFilter === 'Hepsi' ? 'Gösterilecek proje bulunamadı.' : `"${selectedStatusFilter}" durumunda proje bulunamadı.`}
