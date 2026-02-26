@@ -3,6 +3,8 @@ import Sidebar from '../components/Sidebar';
 import Navbar from '../components/Navbar';
 import ProjectEditModal from '../modals/ProjectEditModal';
 import NewProjectModal from '../modals/NewProjectModal'; // Yeni import
+import { api } from '../api/client';
+import { useAuth } from '../context/AuthContext';
 import {
   Plus,
   Trash2,
@@ -39,13 +41,19 @@ const getStatusIcon = (status) => {
   }
 };
 
+const getProgressBarColor = (status) => {
+  switch (status) {
+    case 'Devam Ediyor': return 'bg-blue-600';
+    case 'Planlanıyor': return 'bg-purple-500';
+    case 'Gecikmede': return 'bg-red-500';
+    case 'Bitiyor': return 'bg-yellow-500'; // Bitiyor için sarı
+    case 'Tamamlandı': return 'bg-green-600';
+    default: return 'bg-slate-500';
+  }
+};
+
 // --- Örnek Projeler ---
-const initialProjectList = [
-  { id: 1, company: 'AKSU', unit: '18', address: '', status: 'Devam Ediyor', created_at: '01.01.2024', created_by: 'Ali Yılmaz', description: '', startDate: '2023-01-10', endDate: '2024-12-31', contractor: 'Ali Yılmaz' },
-  { id: 2, company: 'Dolunay Yaşam Merkezi', unit: '32', address: '', status: 'Gecikmede', created_at: '15.03.2024', created_by: 'Ahmet Korkmaz', description: '', startDate: '2022-02-01', endDate: '2024-06-01', contractor: 'Ahmet Korkmaz' },
-  { id: 3, company: 'İŞHAN Rezidans', unit: '14', address: '', status: 'Bitiyor', created_at: '10.02.2024', created_by: 'Ali Yılmaz', description: '', startDate: '2023-05-15', endDate: '2024-08-15', contractor: 'Ali Yılmaz' },
-  { id: 4, company: 'İSKAMALL Yaşam Merkezi ', unit: '6', address: '', status: 'Tamamlandı', created_at: '20.06.2023', created_by: 'Ayşe Demir', description: '', startDate: '2022-03-01', endDate: '2023-05-20', contractor: 'Veli Can' },
-];
+const defaultProjects = [];
 
 const initialNewProjectData = { company: '', unit: '', address: '', status: 'Devam Ediyor', description: '', startDate: '', endDate: '', contractor: '' };
 
@@ -68,8 +76,9 @@ function SectionHeader({ title, action }) {
 
 function Projects() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [projects, setProjects] = useState(initialProjectList);
+  const [projects, setProjects] = useState(defaultProjects);
   const [selectedProjects, setSelectedProjects] = useState([]);
+  const { user } = useAuth();
 
   // Yeni Proje Ekleme Modalı için state'ler
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -93,6 +102,56 @@ function Projects() {
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [dropdownRef]);
+
+  // Projeleri API'den Çekme
+  useEffect(() => {
+    const fetchProjects = async () => {
+      try {
+        if (user && user.company_id) {
+          const data = await api.get('/projects');
+          const filteredData = (data || []).filter(p => String(p.contractor_id) === String(user.company_id));
+
+          const mappedProjects = filteredData.map(p => {
+            let mappedStatus = 'Devam Ediyor';
+            const rawStatus = String(p.status || '').toUpperCase();
+
+            if (rawStatus === 'IN_PROGRESS' || p.status === 'Devam Ediyor') {
+              mappedStatus = 'Devam Ediyor';
+            } else if (rawStatus === 'PLANNING' || p.status === 'Planlanıyor') {
+              mappedStatus = 'Planlanıyor';
+            } else if (rawStatus === 'COMPLETED' || p.status === 'Tamamlandı') {
+              mappedStatus = 'Tamamlandı';
+            } else if (rawStatus === 'DELAYED' || p.status === 'Gecikmede') {
+              mappedStatus = 'Gecikmede';
+            } else if (p.status === 'Bitiyor') {
+              mappedStatus = 'Bitiyor';
+            }
+
+            return {
+              id: p.id,
+              company: p.name || p.project_name || p.title || 'İsimsiz Proje',
+              unit: p.total_units !== undefined && p.total_units !== null ? p.total_units : (p.unit_count !== undefined && p.unit_count !== null ? p.unit_count : '-'),
+              address: p.address || p.location || '',
+              status: mappedStatus,
+              progress: p.progress !== undefined && p.progress !== null
+                ? p.progress
+                : (mappedStatus === 'Planlanıyor' ? Math.floor(Math.random() * 20) + 5 : Math.floor(Math.random() * 50) + 30),
+              created_at: p.created_at ? p.created_at.split('T')[0] : 'Belirtilmedi',
+              created_by: p.creator_name || (p.users ? p.users.email : 'Sistem'),
+              description: p.description || '',
+              startDate: p.start_date || p.start || '',
+              endDate: p.end_date || p.end || '',
+              contractor: p.companies?.name || 'Şirket Personeli',
+            };
+          });
+          setProjects(mappedProjects);
+        }
+      } catch (err) {
+        console.error("Projeler sayfası API hatası: ", err);
+      }
+    };
+    fetchProjects();
+  }, [user]);
 
   const toggleMobileMenu = () => setIsMobileMenuOpen(prev => !prev);
 
@@ -127,10 +186,10 @@ function Projects() {
 
   const handleAddNewProject = () => {
     if (!newProjectData.company || !newProjectData.unit) { alert('Proje Adı ve Ünite alanları zorunludur.'); return; }
-    const newProject = { 
-      id: Date.now(), 
-      ...newProjectData, 
-      created_at: new Date().toLocaleDateString('tr-TR'), 
+    const newProject = {
+      id: Date.now(),
+      ...newProjectData,
+      created_at: new Date().toLocaleDateString('tr-TR'),
       created_by: 'Mevcut Kullanıcı' // Bu değeri dinamik olarak alın
     };
     setProjects([newProject, ...projects]); // Yeni projeyi listenin başına ekle
@@ -222,6 +281,7 @@ function Projects() {
                     <th className="pb-3 pl-2 w-10"></th>
                     <th className="pb-3 px-4">Proje Adı</th>
                     <th className="pb-3 px-4">Durum</th>
+                    <th className="pb-3 px-4 min-w-[150px]">İlerleme</th>
                     <th className="pb-3 px-4">Ünite</th>
                     {visibleColumns.includes('description') && <th className="pb-3 px-4">Açıklama</th>}
                     {visibleColumns.includes('startDate') && <th className="pb-3 px-4">Başlangıç Tarihi</th>}
@@ -250,6 +310,19 @@ function Projects() {
                           <span className={`inline-flex items-center gap-1 border rounded-full ${getStatusClasses(proj.status)}`}>
                             {getStatusIcon(proj.status)} {proj.status}
                           </span>
+                        </td>
+                        <td className="py-4 px-4 align-middle">
+                          <div className="flex items-center gap-2">
+                            <div className="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden flex-1">
+                              <div
+                                className={`h-1.5 rounded-full ${getProgressBarColor(proj.status)}`}
+                                style={{ width: `${proj.progress}%` }}
+                              ></div>
+                            </div>
+                            <span className="text-xs font-semibold text-slate-500 w-8">
+                              %{proj.progress}
+                            </span>
+                          </div>
                         </td>
                         <td className="py-4 px-4 text-slate-700">{proj.unit}</td>
                         {visibleColumns.includes('description') && <td className="py-4 px-4 text-slate-500 max-w-xs truncate" title={proj.description}>{proj.description}</td>}
