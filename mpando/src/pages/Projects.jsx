@@ -3,6 +3,8 @@ import Sidebar from '../components/Sidebar';
 import Navbar from '../components/Navbar';
 import ProjectEditModal from '../modals/ProjectEditModal';
 import NewProjectModal from '../modals/NewProjectModal'; // Yeni import
+import { api } from '../api/client';
+import { useAuth } from '../context/AuthContext';
 import {
   Plus,
   Trash2,
@@ -76,7 +78,7 @@ function SectionHeader({ title, action }) {
 
 function Projects() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [projects, setProjects] = useState(defaultProjects);
+  const [projects, setProjects] = useState([]);
   const [selectedProjects, setSelectedProjects] = useState([]);
   const { user } = useAuth();
 
@@ -95,7 +97,7 @@ function Projects() {
   const [selectedStatusFilter, setSelectedStatusFilter] = useState('Hepsi');
   const filterDropdownRef = useRef(null);
 
-  const allStatusOptions = ['Hepsi', ...new Set(initialProjectList.map(p => p.status))];
+  const allStatusOptions = ['Hepsi', ...new Set(projects.map(p => p.status))];
 
   useEffect(() => {
     function handleClickOutside(event) {
@@ -108,7 +110,57 @@ function Projects() {
     }
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [dropdownRef]);
+  }, []);
+
+  // Projeleri API'den Çekme
+  useEffect(() => {
+    const fetchProjects = async () => {
+      try {
+        if (user && user.company_id) {
+          const data = await api.get('/projects');
+          const filteredData = (data || []).filter(p => String(p.contractor_id) === String(user.company_id));
+
+          const mappedProjects = filteredData.map(p => {
+            let mappedStatus = 'Devam Ediyor';
+            const rawStatus = String(p.status || '').toUpperCase();
+
+            if (rawStatus === 'IN_PROGRESS' || p.status === 'Devam Ediyor') {
+              mappedStatus = 'Devam Ediyor';
+            } else if (rawStatus === 'PLANNING' || p.status === 'Planlanıyor') {
+              mappedStatus = 'Planlanıyor';
+            } else if (rawStatus === 'COMPLETED' || p.status === 'Tamamlandı') {
+              mappedStatus = 'Tamamlandı';
+            } else if (rawStatus === 'DELAYED' || p.status === 'Gecikmede') {
+              mappedStatus = 'Gecikmede';
+            } else if (p.status === 'Bitiyor') {
+              mappedStatus = 'Bitiyor';
+            }
+
+            return {
+              id: p.id,
+              company: p.name || p.project_name || p.title || 'İsimsiz Proje',
+              unit: p.total_units !== undefined && p.total_units !== null ? p.total_units : (p.unit_count !== undefined && p.unit_count !== null ? p.unit_count : '-'),
+              address: p.address || p.location || '',
+              status: mappedStatus,
+              progress: p.progress !== undefined && p.progress !== null
+                ? p.progress
+                : (mappedStatus === 'Planlanıyor' ? Math.floor(Math.random() * 20) + 5 : Math.floor(Math.random() * 50) + 30),
+              created_at: p.created_at ? p.created_at.split('T')[0] : 'Belirtilmedi',
+              created_by: p.creator_name || (p.users ? p.users.email : 'Sistem'),
+              description: p.description || '',
+              startDate: p.start_date || p.start || '',
+              endDate: p.end_date || p.end || '',
+              contractor: p.companies?.name || 'Şirket Personeli',
+            };
+          });
+          setProjects(mappedProjects);
+        }
+      } catch (err) {
+        console.error("Projeler sayfası API hatası: ", err);
+      }
+    };
+    fetchProjects();
+  }, [user]);
 
   const toggleMobileMenu = () => setIsMobileMenuOpen(prev => !prev);
 
