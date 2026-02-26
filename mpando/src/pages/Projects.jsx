@@ -191,10 +191,14 @@ function Projects() {
             endDate: (() => {
               const raw = p.end_date || p.end;
               if (!raw || raw === '-') return '';
-              return raw.split('T')[0];
+              if (String(raw).includes('.')) {
+                const parts = raw.split('.');
+                if (parts.length === 3) return `${parts[2]}-${parts[1]}-${parts[0]}`;
+              }
+              return String(raw).split('T')[0];
             })(),
-            contractor: p.site_engineers?.full_name || p.site_engineers?.name || 'Atanmamış',
-            contractor_id: p.site_engineer_id
+            contractor: p.users?.full_name || p.users?.name || p.creator_name || 'Atanmamış',
+            contractor_id: p.created_by
           };
         });
         setProjects(mappedProjects);
@@ -264,16 +268,14 @@ function Projects() {
       const createData = {
         name: newProjectData.company,
         address: newProjectData.address,
-        unit_count: 1,
+        unit_count: 1, // unit field is used for display, backend expects unit_count
         status: status === 'Devam Ediyor' ? 'IN_PROGRESS' :
           status === 'Tamamlandı' ? 'COMPLETED' :
             status === 'Planlanıyor' ? 'PLANNING' :
               status === 'Gecikmede' ? 'DELAYED' : 'IN_PROGRESS',
         description: newProjectData.description,
-        start_date: newProjectData.startDate || null,
         end_date: newProjectData.endDate || null,
-        progress: progress,
-        site_engineer_id: newProjectData.contractor_id || null,
+        created_by: newProjectData.contractor_id || user.id,
         contractor_id: user.company_id
       };
 
@@ -293,11 +295,6 @@ function Projects() {
     if (!editFormData.company) { alert('Proje Adı boş bırakılamaz.'); return; }
     try {
       const status = editFormData.status;
-      let progress = selectedProjectForEdit.progress || 0;
-
-      if (status === 'Tamamlandı') progress = 100;
-      else if (status === 'Planlanıyor') progress = 0;
-      else if (status === 'Devam Ediyor' && progress === 100) progress = 90; // Tamamlandıdan geri çekilirse
 
       const updateData = {
         name: editFormData.company,
@@ -308,19 +305,12 @@ function Projects() {
               status === 'Gecikmede' ? 'DELAYED' :
                 status === 'Bitiyor' ? 'FINISHING' : 'IN_PROGRESS',
         description: editFormData.description,
-        start_date: editFormData.startDate || null,
         end_date: editFormData.endDate || null,
-        progress: progress,
-        site_engineer_id: editFormData.contractor_id || null
+        created_by: editFormData.contractor_id || null
       };
 
       await api.put(`/projects/${selectedProjectForEdit.id}`, updateData);
-      setProjects(prev => prev.map(p => p.id === selectedProjectForEdit.id ? {
-        ...p,
-        ...editFormData,
-        progress: progress,
-        status: status
-      } : p));
+      await fetchProjects(); // Backend'den güncel veriyi çekerek senkronize olalım
       closeEditModal();
     } catch (err) {
       console.error("Proje güncelleme hatası:", err);
