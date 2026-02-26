@@ -119,7 +119,6 @@ export default function AppleStyleSidebar({ isMobileMenuOpen, closeMobileMenu })
 
   return (
     <>
-      {/* Mobile Overlay */}
       {isMobileMenuOpen && (
         <div 
           className="fixed inset-0 bg-slate-900/20 backdrop-blur-sm z-45 md:hidden transition-opacity duration-300"
@@ -232,11 +231,6 @@ export default function AppleStyleSidebar({ isMobileMenuOpen, closeMobileMenu })
                           {item.icon}
                         </span>
                         {!isSidebarCollapsed && <span className="text-[13.5px]">{item.name}</span>}
-                        
-                        {/* Active Indicator Dot (Optional Apple Touch) */}
-                        {/* {item.isActive && !isSidebarCollapsed && (
-                           <span className="ml-auto w-1.5 h-1.5 rounded-full bg-blue-500"></span>
-                        )} */}
                       </a>
                     </li>
                   ))}

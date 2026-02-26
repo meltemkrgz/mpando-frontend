@@ -1,14 +1,15 @@
 import React, { useState, useRef, useEffect } from 'react';
 import Sidebar from '../components/Sidebar';
 import Navbar from '../components/Navbar';
-import ProjectEditModal from '../modals/ProjectEditModal'; // Düzenleme modalı ayrı dosya
+import ProjectEditModal from '../modals/ProjectEditModal';
+import NewProjectModal from '../modals/NewProjectModal'; // Yeni import
 import {
   Plus,
   Trash2,
   CheckSquare,
   Pencil,
-  X,
-  ChevronDown,
+  X, // X ikonu artık doğrudan modal içinde kullanılmıyor, sadece burada kalabilir
+  ChevronDown, // ChevronDown ikonu artık doğrudan modal içinde kullanılmıyor, sadece burada kalabilir
   Columns,
   Clock,
   AlertCircle,
@@ -20,7 +21,6 @@ import {
 // --- Yardımcı Fonksiyonlar ---
 const getStatusClasses = (status) => {
   switch (status) {
-    // BURASI GÜNCELLENDİ: text-[10px], px-2 py-1 ve font-bold eklendi
     case 'Devam Ediyor': return 'bg-blue-50 text-blue-700 border-blue-200 text-[10px] font-bold px-2 py-1';
     case 'Gecikmede': return 'bg-red-50 text-red-700 border-red-200 text-[10px] font-bold px-2 py-1';
     case 'Bitiyor': return 'bg-yellow-50 text-yellow-700 border-yellow-200 text-[10px] font-bold px-2 py-1';
@@ -54,10 +54,9 @@ const optionalColumns = [
   { key: 'startDate', label: 'Başlangıç Tarihi' },
   { key: 'endDate', label: 'Bitiş Tarihi' },
   { key: 'contractor', label: 'Müteahhit' },
-  { key: 'created_at', label: 'Oluşturulma Tarihi' }, // BURASI EKLENDİ
+  { key: 'created_at', label: 'Oluşturulma Tarihi' },
 ];
 
-// --- Section Header Bileşeni ---
 function SectionHeader({ title, action }) {
   return (
     <div className="flex items-center justify-between mb-6">
@@ -67,26 +66,24 @@ function SectionHeader({ title, action }) {
   );
 }
 
-// --- Ana Component ---
 function Projects() {
-  // --- State Yönetimi ---
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [projects, setProjects] = useState(initialProjectList);
   const [selectedProjects, setSelectedProjects] = useState([]);
 
+  // Yeni Proje Ekleme Modalı için state'ler
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [newProjectData, setNewProjectData] = useState(initialNewProjectData);
 
+  // Proje Düzenleme Modalı için state'ler
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [selectedProjectForEdit, setSelectedProjectForEdit] = useState(null);
   const [editFormData, setEditFormData] = useState(null);
 
   const [isColumnDropdownOpen, setIsColumnDropdownOpen] = useState(false);
-  // `created_at` varsayılan olarak `visibleColumns` içinde olmayacak, bu da başlangıçta gizli kalmasını sağlar.
   const [visibleColumns, setVisibleColumns] = useState([]);
   const dropdownRef = useRef(null);
 
-  // --- Effect: Dropdown dışına tıklandığında kapatma ---
   useEffect(() => {
     function handleClickOutside(event) {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
@@ -97,7 +94,6 @@ function Projects() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [dropdownRef]);
 
-  // --- Handlers ---
   const toggleMobileMenu = () => setIsMobileMenuOpen(prev => !prev);
 
   const handleSelectProject = (id) => {
@@ -120,8 +116,9 @@ function Projects() {
     setVisibleColumns(prev => prev.includes(key) ? prev.filter(k => k !== key) : [...prev, key]);
   };
 
+  // Yeni Proje Modalı işlevleri
   const openAddModal = () => setIsAddModalOpen(true);
-  const closeAddModal = () => { setIsAddModalOpen(false); setNewProjectData(initialNewProjectData); };
+  const closeAddModal = () => { setIsAddModalOpen(false); setNewProjectData(initialNewProjectData); }; // Modalı kapatırken formu temizle
 
   const handleNewProjectChange = (e) => {
     const { name, value } = e.target;
@@ -130,11 +127,17 @@ function Projects() {
 
   const handleAddNewProject = () => {
     if (!newProjectData.company || !newProjectData.unit) { alert('Proje Adı ve Ünite alanları zorunludur.'); return; }
-    const newProject = { id: Date.now(), ...newProjectData, created_at: new Date().toLocaleDateString('tr-TR'), created_by: 'Mevcut Kullanıcı' };
-    setProjects([newProject, ...projects]);
+    const newProject = { 
+      id: Date.now(), 
+      ...newProjectData, 
+      created_at: new Date().toLocaleDateString('tr-TR'), 
+      created_by: 'Mevcut Kullanıcı' // Bu değeri dinamik olarak alın
+    };
+    setProjects([newProject, ...projects]); // Yeni projeyi listenin başına ekle
     closeAddModal();
   };
 
+  // Düzenleme Modalı işlevleri
   const openEditModal = (project) => { setSelectedProjectForEdit(project); setEditFormData({ ...project }); setIsEditModalOpen(true); };
   const closeEditModal = () => { setIsEditModalOpen(false); setTimeout(() => { setSelectedProjectForEdit(null); setEditFormData(null); }, 300); };
   const handleEditFormChange = (e) => { const { name, value } = e.target; setEditFormData(prev => ({ ...prev, [name]: value })); };
@@ -153,7 +156,6 @@ function Projects() {
       <main className="flex-1 overflow-y-auto h-screen pt-16 md:pt-0 relative">
         <Navbar title="Projeler" toggleMobileMenu={toggleMobileMenu} />
 
-        {/* Ana içerik alanının padding'i küçük ekranlarda ayarlandı */}
         <div className="px-4 sm:px-6 md:px-8 pb-12 pt-4 space-y-8">
           <SectionHeader
             title="Proje Listesi"
@@ -217,7 +219,7 @@ function Projects() {
               <table className="w-full text-left border-collapse min-w-max">
                 <thead>
                   <tr className="text-xs font-semibold text-slate-400 border-b border-slate-100">
-                    <th className="pb-3 pl-2 w-10"></th> {/* Checkbox sütunu */}
+                    <th className="pb-3 pl-2 w-10"></th>
                     <th className="pb-3 px-4">Proje Adı</th>
                     <th className="pb-3 px-4">Durum</th>
                     <th className="pb-3 px-4">Ünite</th>
@@ -226,7 +228,6 @@ function Projects() {
                     {visibleColumns.includes('endDate') && <th className="pb-3 px-4">Bitiş Tarihi</th>}
                     {visibleColumns.includes('contractor') && <th className="pb-3 px-4">Müteahhit</th>}
                     <th className="pb-3 px-4">Oluşturan</th>
-                    {/* Oluşturulma Tarihi artık koşullu */}
                     {visibleColumns.includes('created_at') && <th className="pb-3 px-4">Oluşturulma Tarihi</th>}
                     <th className="pb-3 px-4 text-center">İşlemler</th>
                   </tr>
@@ -234,7 +235,6 @@ function Projects() {
                 <tbody className="text-sm">
                   {projects.length === 0 ? (
                     <tr>
-                      {/* colSpan değeri güncellendi. Artık 6 sabit sütun var + görünür isteğe bağlı sütun sayısı. */}
                       <td colSpan={6 + visibleColumns.length} className="py-8 text-center text-slate-500">
                         Gösterilecek proje bulunamadı.
                       </td>
@@ -282,64 +282,14 @@ function Projects() {
           onSave={handleUpdateProject}
         />
 
-        {/* Yeni Proje Ekleme Modalı */}
-        {isAddModalOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/20 backdrop-blur-[2px] p-4">
-            <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in-95 duration-200">
-              <div className="flex items-center justify-between p-5 border-b border-slate-100">
-                <h3 className="text-lg font-bold text-slate-800">Yeni Proje Ekle</h3>
-                <button onClick={closeAddModal} className="text-slate-400 hover:text-slate-600 hover:bg-slate-100 p-1.5 rounded-lg transition-colors">
-                  <X size={20} />
-                </button>
-              </div>
-              <form onSubmit={(e) => { e.preventDefault(); handleAddNewProject(); }}>
-                <div className="p-5 space-y-4 max-h-[70vh] overflow-y-auto">
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-1">Proje Adı</label>
-                    <input type="text" name="company" value={newProjectData.company} onChange={handleNewProjectChange} className="w-full border border-slate-200 rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-blue-600/30 focus:border-blue-600 transition-all text-sm" />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-1">Adres</label>
-                    <input type="text" name="address" value={newProjectData.address} onChange={handleNewProjectChange} className="w-full border border-slate-200 rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-blue-600/30 focus:border-blue-600 transition-all text-sm" />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-1">Ünite</label>
-                    <input type="number" name="unit" value={newProjectData.unit} onChange={handleNewProjectChange} className="w-full border border-slate-200 rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-blue-600/30 focus:border-blue-600 transition-all text-sm" />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-1">Açıklama</label>
-                    <textarea name="description" value={newProjectData.description} onChange={handleNewProjectChange} rows="3" className="w-full border border-slate-200 rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-blue-600/30 focus:border-blue-600 transition-all text-sm"></textarea>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-1">Başlangıç Tarihi</label>
-                    <input type="date" name="startDate" value={newProjectData.startDate} onChange={handleNewProjectChange} className="w-full border border-slate-200 rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-blue-600/30 focus:border-blue-600 transition-all text-sm" />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-1">Bitiş Tarihi</label>
-                    <input type="date" name="endDate" value={newProjectData.endDate} onChange={handleNewProjectChange} className="w-full border border-slate-200 rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-blue-600/30 focus:border-blue-600 transition-all text-sm" />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-1">Müteahhit</label>
-                    <input type="text" name="contractor" value={newProjectData.contractor} onChange={handleNewProjectChange} className="w-full border border-slate-200 rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-blue-600/30 focus:border-blue-600 transition-all text-sm" />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-1">Durumu</label>
-                    <select name="status" value={newProjectData.status} onChange={handleNewProjectChange} className="w-full border border-slate-200 rounded-lg py-2.5 pl-3 pr-10 outline-none focus:ring-2 focus:ring-blue-600/30 focus:border-blue-600 transition-all text-sm bg-white cursor-pointer">
-                      <option>Devam Ediyor</option>
-                      <option>Gecikmede</option>
-                      <option>Bitiyor</option>
-                      <option>Tamamlandı</option>
-                    </select>
-                  </div>
-                </div>
-                <div className="flex items-center justify-end gap-3 p-5 border-t border-slate-100 bg-slate-50">
-                  <button type="button" onClick={closeAddModal} className="px-4 py-2 text-sm font-medium text-slate-600 hover:text-slate-800 hover:bg-slate-200 rounded-lg transition-colors">İptal</button>
-                  <button type="submit" className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 shadow-sm rounded-lg transition-all">Projeyi Ekle</button>
-                </div>
-              </form>
-            </div>
-          </div>
-        )}
+        {/* Yeni Proje Ekleme Modalı - Artık ayrı bir bileşen */}
+        <NewProjectModal
+          isOpen={isAddModalOpen}
+          formData={newProjectData}
+          onClose={closeAddModal}
+          onChange={handleNewProjectChange}
+          onAdd={handleAddNewProject}
+        />
       </main>
     </div>
   );

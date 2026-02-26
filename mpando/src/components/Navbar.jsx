@@ -44,9 +44,6 @@ function Navbar({ title = "Genel Bakış", toggleMobileMenu }) {
             <h1 className="text-xl font-bold text-slate-800 tracking-tight hidden md:block">
               {title}
             </h1>
-            <p className="text-xs text-slate-500 font-medium mt-0.5 hidden md:block">
-              25 Şubat 2026, Çarşamba
-            </p>
           </div>
         </div>
         <div className="flex items-center gap-2 md:gap-4">
