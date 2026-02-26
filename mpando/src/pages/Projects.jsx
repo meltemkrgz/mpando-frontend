@@ -3,15 +3,11 @@ import Sidebar from '../components/Sidebar';
 import Navbar from '../components/Navbar';
 import ProjectEditModal from '../modals/ProjectEditModal';
 import NewProjectModal from '../modals/NewProjectModal'; // Yeni import
-import { api } from '../api/client';
-import { useAuth } from '../context/AuthContext';
 import {
   Plus,
   Trash2,
   CheckSquare,
   Pencil,
-  X, // X ikonu artık doğrudan modal içinde kullanılmıyor, sadece burada kalabilir
-  ChevronDown, // ChevronDown ikonu artık doğrudan modal içinde kullanılmıyor, sadece burada kalabilir
   Columns,
   Clock,
   AlertCircle,
@@ -20,7 +16,6 @@ import {
   Filter
 } from 'lucide-react';
 
-// --- Yardımcı Fonksiyonlar ---
 const getStatusClasses = (status) => {
   switch (status) {
     case 'Devam Ediyor': return 'bg-blue-50 text-blue-700 border-blue-200 text-[10px] font-bold px-2 py-1';
@@ -53,7 +48,12 @@ const getProgressBarColor = (status) => {
 };
 
 // --- Örnek Projeler ---
-const defaultProjects = [];
+const initialProjectList = [
+  { id: 1, company: 'AKSU', unit: '18', address: '', status: 'Devam Ediyor', created_at: '01.01.2024', created_by: 'Ali Yılmaz', description: '', startDate: '2023-01-10', endDate: '2024-12-31', contractor: 'Ali Yılmaz' },
+  { id: 2, company: 'Dolunay Yaşam Merkezi', unit: '32', address: '', status: 'Gecikmede', created_at: '15.03.2024', created_by: 'Ahmet Korkmaz', description: '', startDate: '2022-02-01', endDate: '2024-06-01', contractor: 'Ahmet Korkmaz' },
+  { id: 3, company: 'İŞHAN Rezidans', unit: '14', address: '', status: 'Bitiyor', created_at: '10.02.2024', created_by: 'Ali Yılmaz', description: '', startDate: '2023-05-15', endDate: '2024-08-15', contractor: 'Ali Yılmaz' },
+  { id: 4, company: 'İSKAMALL Yaşam Merkezi ', unit: '6', address: '', status: 'Tamamlandı', created_at: '20.06.2023', created_by: 'Ayşe Demir', description: '', startDate: '2022-03-01', endDate: '2023-05-20', contractor: 'Veli Can' },
+];
 
 const initialNewProjectData = { company: '', unit: '', address: '', status: 'Devam Ediyor', description: '', startDate: '', endDate: '', contractor: '' };
 
@@ -80,78 +80,35 @@ function Projects() {
   const [selectedProjects, setSelectedProjects] = useState([]);
   const { user } = useAuth();
 
-  // Yeni Proje Ekleme Modalı için state'ler
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [newProjectData, setNewProjectData] = useState(initialNewProjectData);
 
-  // Proje Düzenleme Modalı için state'ler
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [selectedProjectForEdit, setSelectedProjectForEdit] = useState(null);
   const [editFormData, setEditFormData] = useState(null);
 
   const [isColumnDropdownOpen, setIsColumnDropdownOpen] = useState(false);
   const [visibleColumns, setVisibleColumns] = useState([]);
-  const dropdownRef = useRef(null);
+  const columnDropdownRef = useRef(null);
+
+  const [isFilterDropdownOpen, setIsFilterDropdownOpen] = useState(false);
+  const [selectedStatusFilter, setSelectedStatusFilter] = useState('Hepsi');
+  const filterDropdownRef = useRef(null);
+
+  const allStatusOptions = ['Hepsi', ...new Set(initialProjectList.map(p => p.status))];
 
   useEffect(() => {
     function handleClickOutside(event) {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+      if (columnDropdownRef.current && !columnDropdownRef.current.contains(event.target)) {
         setIsColumnDropdownOpen(false);
+      }
+      if (filterDropdownRef.current && !filterDropdownRef.current.contains(event.target)) {
+        setIsFilterDropdownOpen(false);
       }
     }
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [dropdownRef]);
-
-  // Projeleri API'den Çekme
-  useEffect(() => {
-    const fetchProjects = async () => {
-      try {
-        if (user && user.company_id) {
-          const data = await api.get('/projects');
-          const filteredData = (data || []).filter(p => String(p.contractor_id) === String(user.company_id));
-
-          const mappedProjects = filteredData.map(p => {
-            let mappedStatus = 'Devam Ediyor';
-            const rawStatus = String(p.status || '').toUpperCase();
-
-            if (rawStatus === 'IN_PROGRESS' || p.status === 'Devam Ediyor') {
-              mappedStatus = 'Devam Ediyor';
-            } else if (rawStatus === 'PLANNING' || p.status === 'Planlanıyor') {
-              mappedStatus = 'Planlanıyor';
-            } else if (rawStatus === 'COMPLETED' || p.status === 'Tamamlandı') {
-              mappedStatus = 'Tamamlandı';
-            } else if (rawStatus === 'DELAYED' || p.status === 'Gecikmede') {
-              mappedStatus = 'Gecikmede';
-            } else if (p.status === 'Bitiyor') {
-              mappedStatus = 'Bitiyor';
-            }
-
-            return {
-              id: p.id,
-              company: p.name || p.project_name || p.title || 'İsimsiz Proje',
-              unit: p.total_units !== undefined && p.total_units !== null ? p.total_units : (p.unit_count !== undefined && p.unit_count !== null ? p.unit_count : '-'),
-              address: p.address || p.location || '',
-              status: mappedStatus,
-              progress: p.progress !== undefined && p.progress !== null
-                ? p.progress
-                : (mappedStatus === 'Planlanıyor' ? Math.floor(Math.random() * 20) + 5 : Math.floor(Math.random() * 50) + 30),
-              created_at: p.created_at ? p.created_at.split('T')[0] : 'Belirtilmedi',
-              created_by: p.creator_name || (p.users ? p.users.email : 'Sistem'),
-              description: p.description || '',
-              startDate: p.start_date || p.start || '',
-              endDate: p.end_date || p.end || '',
-              contractor: p.companies?.name || 'Şirket Personeli',
-            };
-          });
-          setProjects(mappedProjects);
-        }
-      } catch (err) {
-        console.error("Projeler sayfası API hatası: ", err);
-      }
-    };
-    fetchProjects();
-  }, [user]);
 
   const toggleMobileMenu = () => setIsMobileMenuOpen(prev => !prev);
 
@@ -160,8 +117,12 @@ function Projects() {
   };
 
   const handleSelectAll = () => {
-    if (selectedProjects.length === projects.length) setSelectedProjects([]);
-    else setSelectedProjects(projects.map(p => p.id));
+    const currentProjectIds = filteredProjects.map(p => p.id);
+    if (selectedProjects.length === currentProjectIds.length && selectedProjects.every(id => currentProjectIds.includes(id))) {
+      setSelectedProjects([]);
+    } else {
+      setSelectedProjects(currentProjectIds);
+    }
   };
 
   const handleDeleteSelected = () => {
@@ -175,9 +136,8 @@ function Projects() {
     setVisibleColumns(prev => prev.includes(key) ? prev.filter(k => k !== key) : [...prev, key]);
   };
 
-  // Yeni Proje Modalı işlevleri
   const openAddModal = () => setIsAddModalOpen(true);
-  const closeAddModal = () => { setIsAddModalOpen(false); setNewProjectData(initialNewProjectData); }; // Modalı kapatırken formu temizle
+  const closeAddModal = () => { setIsAddModalOpen(false); setNewProjectData(initialNewProjectData); };
 
   const handleNewProjectChange = (e) => {
     const { name, value } = e.target;
@@ -192,11 +152,10 @@ function Projects() {
       created_at: new Date().toLocaleDateString('tr-TR'),
       created_by: 'Mevcut Kullanıcı' // Bu değeri dinamik olarak alın
     };
-    setProjects([newProject, ...projects]); // Yeni projeyi listenin başına ekle
+    setProjects([newProject, ...projects]);
     closeAddModal();
   };
 
-  // Düzenleme Modalı işlevleri
   const openEditModal = (project) => { setSelectedProjectForEdit(project); setEditFormData({ ...project }); setIsEditModalOpen(true); };
   const closeEditModal = () => { setIsEditModalOpen(false); setTimeout(() => { setSelectedProjectForEdit(null); setEditFormData(null); }, 300); };
   const handleEditFormChange = (e) => { const { name, value } = e.target; setEditFormData(prev => ({ ...prev, [name]: value })); };
@@ -206,9 +165,17 @@ function Projects() {
     closeEditModal();
   };
 
-  const handleOpenFilter = () => alert('Filtreleme özelliği henüz geliştirilme aşamasındadır.');
+  const toggleFilterDropdown = () => setIsFilterDropdownOpen(prev => !prev);
+  const handleFilterChange = (status) => {
+    setSelectedStatusFilter(status);
+    setIsFilterDropdownOpen(false);
+    setSelectedProjects([]);
+  };
 
-  // --- JSX ---
+  const filteredProjects = selectedStatusFilter === 'Hepsi'
+    ? projects
+    : projects.filter(proj => proj.status === selectedStatusFilter);
+
   return (
     <div className="flex min-h-screen bg-[#F5F5F7] font-sans text-slate-800">
       <Sidebar isMobileMenuOpen={isMobileMenuOpen} closeMobileMenu={() => setIsMobileMenuOpen(false)} />
@@ -220,13 +187,38 @@ function Projects() {
             title="Proje Listesi"
             action={
               <>
-                <button
-                  onClick={handleOpenFilter}
-                  className="flex items-center gap-1.5 text-sm font-medium text-slate-600 bg-white hover:bg-slate-50 border border-slate-200 shadow-sm px-3 py-1.5 rounded-lg transition-colors"
-                >
-                  <Filter size={14} />
-                </button>
-                <div className="relative" ref={dropdownRef}>
+                <div className="relative" ref={filterDropdownRef}>
+                  <button
+                    onClick={toggleFilterDropdown}
+                    className="flex items-center gap-1.5 text-sm font-medium text-slate-600 bg-white hover:bg-slate-50 border border-slate-200 shadow-sm px-3 py-1.5 rounded-lg transition-colors"
+                  >
+                    <Filter size={14} />
+                    {selectedStatusFilter !== 'Hepsi' && (
+                      <span className="ml-1 px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 text-xs font-semibold">
+                        {selectedStatusFilter}
+                      </span>
+                    )}
+                  </button>
+                  {isFilterDropdownOpen && (
+                    <div className="absolute top-full right-0 mt-2 w-48 bg-white border border-slate-200 rounded-lg shadow-lg z-20 animate-in fade-in-25">
+                      <div className="p-2">
+                        <p className="text-xs font-semibold text-slate-400 px-2 pt-1 pb-2">Duruma Göre Filtrele</p>
+                        {allStatusOptions.map(option => (
+                          <button
+                            key={option}
+                            onClick={() => handleFilterChange(option)}
+                            className={`flex items-center justify-between w-full px-2 py-1.5 rounded-md text-sm ${selectedStatusFilter === option ? 'bg-blue-50 text-blue-700 font-semibold' : 'hover:bg-slate-50 text-slate-700'}`}
+                          >
+                            <span>{option}</span>
+                            {selectedStatusFilter === option && <CheckCircle size={16} className="text-blue-600" />}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                <div className="relative" ref={columnDropdownRef}>
                   <button
                     onClick={() => setIsColumnDropdownOpen(prev => !prev)}
                     className="flex items-center gap-1.5 text-sm font-medium text-slate-600 bg-white hover:bg-slate-50 border border-slate-200 shadow-sm px-3 py-1.5 rounded-lg transition-colors"
@@ -264,7 +256,7 @@ function Projects() {
                 <div className="flex flex-wrap items-center gap-2 sm:gap-4">
                   <button onClick={handleSelectAll} className="flex items-center gap-1.5 text-sm font-medium text-blue-700 bg-blue-50 hover:bg-blue-100 transition-colors px-3 py-1.5 rounded-lg">
                     <CheckSquare size={16} />
-                    <span className="hidden sm:inline">{selectedProjects.length === projects.length ? 'Seçimi Temizle' : 'Tümünü Seç'}</span>
+                    <span className="hidden sm:inline">{selectedProjects.length === filteredProjects.length ? 'Seçimi Temizle' : 'Tümünü Seç'}</span>
                   </button>
                   <div className="w-px h-5 bg-slate-300"></div>
                   <button onClick={handleDeleteSelected} className="flex items-center gap-1.5 text-sm font-medium text-red-600 hover:text-red-700 bg-red-50 hover:bg-red-100 px-3 py-1.5 rounded-lg transition-colors">
@@ -293,14 +285,14 @@ function Projects() {
                   </tr>
                 </thead>
                 <tbody className="text-sm">
-                  {projects.length === 0 ? (
+                  {filteredProjects.length === 0 ? (
                     <tr>
                       <td colSpan={6 + visibleColumns.length} className="py-8 text-center text-slate-500">
-                        Gösterilecek proje bulunamadı.
+                        {selectedStatusFilter === 'Hepsi' ? 'Gösterilecek proje bulunamadı.' : `"${selectedStatusFilter}" durumunda proje bulunamadı.`}
                       </td>
                     </tr>
                   ) : (
-                    projects.map(proj => (
+                    filteredProjects.map(proj => (
                       <tr key={proj.id} className={`group transition-colors border-b border-slate-50 last:border-none ${selectedProjects.includes(proj.id) ? 'bg-blue-50/50' : 'hover:bg-slate-50'}`}>
                         <td className="py-4 pl-2">
                           <input type="checkbox" checked={selectedProjects.includes(proj.id)} onChange={() => handleSelectProject(proj.id)} className="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer accent-blue-600" />
@@ -330,7 +322,6 @@ function Projects() {
                         {visibleColumns.includes('endDate') && <td className="py-4 px-4 text-slate-500">{proj.endDate}</td>}
                         {visibleColumns.includes('contractor') && <td className="py-4 px-4 text-slate-500">{proj.contractor}</td>}
                         <td className="py-4 px-4 text-slate-500">{proj.created_by}</td>
-                        {/* Oluşturulma Tarihi artık koşullu */}
                         {visibleColumns.includes('created_at') && <td className="py-4 px-4 text-slate-500">{proj.created_at}</td>}
                         <td className="py-4 px-4 text-center">
                           <button onClick={() => openEditModal(proj)} className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 text-sm font-medium text-slate-600 bg-white border border-slate-200 hover:text-blue-600 hover:border-blue-200 hover:bg-blue-50 rounded-lg transition-all shadow-sm">
@@ -346,7 +337,6 @@ function Projects() {
           </div>
         </div>
 
-        {/* Düzenleme Modalı */}
         <ProjectEditModal
           isOpen={isEditModalOpen}
           projectData={editFormData}
@@ -355,7 +345,6 @@ function Projects() {
           onSave={handleUpdateProject}
         />
 
-        {/* Yeni Proje Ekleme Modalı - Artık ayrı bir bileşen */}
         <NewProjectModal
           isOpen={isAddModalOpen}
           formData={newProjectData}
