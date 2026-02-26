@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { useAuth } from '../context/AuthContext';
 import { 
   Search, 
   Bell, 
@@ -15,6 +16,7 @@ function Navbar({ title = "Genel Bakış", toggleMobileMenu }) {
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(false);
   const profileDropdownRef = useRef(null);
+  const { user, logout } = useAuth();
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -93,14 +95,14 @@ function Navbar({ title = "Genel Bakış", toggleMobileMenu }) {
                   alt="User" 
                   className="w-8 h-8 rounded-full bg-slate-200 ring-2 ring-white shadow-sm object-cover"
                 />
-                <span className="hidden md:block text-sm font-semibold text-slate-700">Mike J.</span>
+                <span className="hidden md:block text-sm font-semibold text-slate-700">{user.full_name}</span>
                 <ChevronDown className={`hidden md:block w-4 h-4 text-slate-400 transition-transform duration-200 ${isProfileOpen ? 'rotate-180' : ''}`} />
               </button>
               {isProfileOpen && (
                 <div className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-lg border border-slate-100 py-1 z-50">
                   <div className="px-4 py-2 border-b border-slate-100 mb-1">
                     <p className="text-sm font-medium text-slate-900">Hesabım</p>
-                    <p className="text-xs text-slate-500 truncate">mike@example.com</p>
+                    <p className="text-xs text-slate-500 truncate">{user.email}</p>
                   </div>
 
                   <button className="w-full text-left px-4 py-2 text-sm text-slate-600 hover:text-slate-900 hover:bg-slate-50 transition-colors">
@@ -113,7 +115,7 @@ function Navbar({ title = "Genel Bakış", toggleMobileMenu }) {
 
                   <div className="h-px bg-slate-100 my-1"></div>
 
-                  <button className="w-full text-left px-4 py-2 text-sm text-red-600 hover:text-red-700 hover:bg-red-50 transition-colors">
+                  <button onClick={logout} className="w-full text-left px-4 py-2 text-sm text-red-600 hover:text-red-700 hover:bg-red-50 transition-colors">
                     Çıkış Yap
                   </button>
                 </div>
