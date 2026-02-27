@@ -7,6 +7,7 @@ import Projects from "./pages/Projects";
 import ProjectDetails from "./pages/ProjectDetails";
 import Customers from "./pages/Customers";
 import Sales from "./pages/Sales";
+import SecondHandListings from "./pages/SecondHandListings";
 
 function App() {
   return (
@@ -55,6 +56,15 @@ function App() {
           element={
             <PrivateRoute>
               <Sales />
+            </PrivateRoute>
+          }
+        />
+
+        <Route
+          path="/second-hand-listings"
+          element={
+            <PrivateRoute>
+              <SecondHandListings />
             </PrivateRoute>
           }
         />
