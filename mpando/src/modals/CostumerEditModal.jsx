@@ -1,22 +1,7 @@
 import React from 'react';
 import { X, ChevronDown } from 'lucide-react';
 
-const mockCompanies = [
-  { id: 1, name: 'AKSU İnşaat' },
-  { id: 2, name: 'Dolunay A.Ş.' },
-  { id: 3, name: 'İŞHAN Grup' },
-  { id: 4, name: 'İSKAMALL Holding' },
-  { id: 5, name: 'Yeni Vizyon Ltd.' },
-];
-
-const mockEmployees = [
-  { id: 101, fullName: 'Ali Yılmaz' },
-  { id: 102, fullName: 'Ahmet Korkmaz' },
-  { id: 103, fullName: 'Ayşe Demir' },
-  { id: 104, fullName: 'Veli Can' },
-];
-
-function CustomerEditModal({ isOpen, customerData, onClose, onChange, onSave }) {
+function CustomerEditModal({ isOpen, customerData, onClose, onChange, onSave, companies, employees }) {
   if (!isOpen) return null;
 
   return (
@@ -34,41 +19,45 @@ function CustomerEditModal({ isOpen, customerData, onClose, onChange, onSave }) 
               <label className="block text-sm font-medium text-slate-700 mb-1">Müşteri Adı Soyadı</label>
               <input
                 type="text"
-                name="customer_full_name"
-                value={customerData?.customer_full_name || ''}
+                name="full_name"
+                value={customerData?.full_name || customerData?.customer_full_name || ''}
                 onChange={onChange}
                 className="w-full border border-slate-200 rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-blue-600/30 focus:border-blue-600 transition-all text-sm"
               />
             </div>
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1">Şirket Adı</label>
-              <select
-                name="company_id"
-                value={customerData?.company_id || ''}
-                onChange={onChange}
-                className="w-full border border-slate-200 rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-blue-600/30 focus:border-blue-600 transition-all text-sm"
-              >
-                <option value="">Seçiniz</option>
-                {mockCompanies.map(company => (
-                  <option key={company.id} value={company.id}>{company.name}</option>
-                ))}
-              </select>
-            <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+              <div className="relative">
+                <select
+                  name="company_id"
+                  value={customerData?.company_id || ''}
+                  onChange={onChange}
+                  className="w-full appearance-none border border-slate-200 rounded-lg py-2.5 pl-3 pr-10 outline-none focus:ring-2 focus:ring-blue-600/30 focus:border-blue-600 transition-all text-sm bg-white cursor-pointer"
+                >
+                  <option value="">Seçiniz</option>
+                  {(companies || []).map(company => (
+                    <option key={company.id} value={company.id}>{company.name}</option>
+                  ))}
+                </select>
+                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+              </div>
             </div>
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1">Sorumlu Çalışan</label>
-              <select
-                name="employee_id"
-                value={customerData?.employee_id || ''}
-                onChange={onChange}
-                className="w-full border border-slate-200 rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-blue-600/30 focus:border-blue-600 transition-all text-sm"
-              >
-                <option value="">Seçiniz</option>
-                {mockEmployees.map(employee => (
-                  <option key={employee.id} value={employee.id}>{employee.fullName}</option>
-                ))}
-              </select>
-            <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+              <div className="relative">
+                <select
+                  name="employee_id"
+                  value={customerData?.employee_id || ''}
+                  onChange={onChange}
+                  className="w-full appearance-none border border-slate-200 rounded-lg py-2.5 pl-3 pr-10 outline-none focus:ring-2 focus:ring-blue-600/30 focus:border-blue-600 transition-all text-sm bg-white cursor-pointer"
+                >
+                  <option value="">Seçiniz</option>
+                  {(employees || []).map(employee => (
+                    <option key={employee.id} value={employee.id}>{employee.full_name || employee.name}</option>
+                  ))}
+                </select>
+                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+              </div>
             </div>
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1">TC Kimlik No</label>

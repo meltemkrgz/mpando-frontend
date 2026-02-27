@@ -63,8 +63,8 @@ async function request(endpoint, options = {}) {
       options.body instanceof FormData
         ? options.body
         : options.body
-        ? JSON.stringify(options.body)
-        : undefined,
+          ? JSON.stringify(options.body)
+          : undefined,
 
   });
 

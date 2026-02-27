@@ -81,7 +81,19 @@ const getProgressBarColor = (status) => {
 
 // --- COMPONENTS ---
 
-function StatCard({ title, value, subtext, trend, trendUp, icon, alert }) {
+function StatCard({ title, value, subtext, trend, trendUp, icon, alert, loading }) {
+  if (loading) {
+    return (
+      <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm animate-pulse">
+        <div className="flex justify-between items-start mb-4">
+          <div className="w-10 h-10 bg-slate-100 rounded-xl"></div>
+          <div className="w-12 h-5 bg-slate-50 rounded-full"></div>
+        </div>
+        <div className="w-20 h-3 bg-slate-100 rounded mb-2"></div>
+        <div className="w-24 h-8 bg-slate-200 rounded"></div>
+      </div>
+    );
+  }
   return (
     <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
       <div className="flex justify-between items-start mb-4">
@@ -127,6 +139,13 @@ function Dashboard() {
   const [stockDataState, setStockDataState] = useState(defaultStockData);
   const [purchaseRequests, setPurchaseRequests] = useState([]);
   const [recentActivities, setRecentActivities] = useState(defaultActivities);
+  const [loading, setLoading] = useState({
+    projects: true,
+    finance: true,
+    stock: true,
+    activities: true,
+    requests: true
+  });
 
   const toggleMobileMenu = () => setIsMobileMenuOpen(!isMobileMenuOpen);
   const closeMobileMenu = () => setIsMobileMenuOpen(false);
@@ -140,261 +159,133 @@ function Dashboard() {
   };
 
   useEffect(() => {
-    const fetchProjects = async () => {
+    if (!user || !user.company_id) return;
+
+    const loadAllDashboardData = async () => {
+      // Bağımlılığımız olan validUserIds'i en başta (veya ortak) alalım
+      let validUserIds = [];
       try {
-        if (user && user.company_id) {
-          // Bütün projeleri çekiyoruz
+        const usersData = await api.get('/users');
+        validUserIds = (usersData || [])
+          .filter(u => String(u.company_id) === String(user.company_id))
+          .map(u => String(u.id));
+      } catch (uErr) {
+        console.error("Users list couldn't be fetched:", uErr);
+        validUserIds = [String(user.id)];
+      }
+
+      // 1. Projeleri Getir
+      const fetchProjectsData = async () => {
+        try {
           const data = await api.get('/projects');
-
-          // Company_id'ye göre filtreleme yapıyoruz ("bana göre listele, kanka 8 tane yok 6 tane var o şirkete ait")
-          const filteredData = (data || []).filter(p => String(p.contractor_id) === String(user.company_id));
-
-          // users tablosundan aynı şirketteki (company_id) kişileri bir kerede çekelim,
-          // bunu finans(created_by) ve satın alma(requested_by) kayıtlarını filtrelemek için kullanacağız.
-          let validUserIds = [];
-          try {
-            const usersData = await api.get('/users');
-            validUserIds = (usersData || [])
-              .filter(u => String(u.company_id) === String(user.company_id))
-              .map(u => String(u.id));
-          } catch (uErr) {
-            console.error("Users data couldn't form for mapping:", uErr);
-          }
-
-          // Finansal hareketleri çekip Nakit Akışı grafiğine yerleştiriyoruz
-          try {
-            const transData = await api.get('/finance/transactions');
-            // 'created_by' id'sinin company_id'mizdeki validUserIds ile eşleşmesi
-            const myTrans = (transData || []).filter(t =>
-              validUserIds.length > 0 ? validUserIds.includes(String(t.created_by)) : String(t.created_by) === String(user.id)
-            );
-
-            const monthNames = ['Oca', 'Şub', 'Mar', 'Nis', 'May', 'Haz', 'Tem', 'Ağu', 'Eyl', 'Eki', 'Kas', 'Ara'];
-            const monthlyData = monthNames.map(name => ({ name, income: 0, expense: 0 }));
-
-            myTrans.forEach(t => {
-              const amount = Number(t.amount) || 0;
-              const dateStr = t.transaction_date || t.created_at;
-              if (!dateStr) return; // Tarih yoksa atla
-
-              const date = new Date(dateStr);
-              if (isNaN(date.getTime())) return;
-
-              const monthIndex = date.getMonth();
-
-              // Backend şimdilik TYPE göndermediği için geçici olarak (description'a göre) ayırıyoruz
-              // Mesela Capital Injection vs Gelir olsun, diğerleri Expense
-              const description = String(t.description || '').toLowerCase();
-              const isIncome = description.includes('capital') || description.includes('injection') || description.includes('gelir');
-
-              if (isIncome) {
-                monthlyData[monthIndex].income += amount;
-              } else {
-                monthlyData[monthIndex].expense += amount;
-              }
-            });
-
-            // Genel toplam gelir ve gideri hesapla
-            const tIncome = myTrans
-              .filter(t => (t.description || '').toLowerCase().includes('capital') || (t.description || '').toLowerCase().includes('injection') || (t.description || '').toLowerCase().includes('gelir'))
-              .reduce((acc, t) => acc + (Number(t.amount) || 0), 0);
-
-            const tExpense = myTrans
-              .filter(t => !((t.description || '').toLowerCase().includes('capital') || (t.description || '').toLowerCase().includes('injection') || (t.description || '').toLowerCase().includes('gelir')))
-              .reduce((acc, t) => acc + (Number(t.amount) || 0), 0);
-
-            setTotalIncome(tIncome);
-            setTotalExpense(tExpense);
-
-            setFinancialData(monthlyData);
-          } catch (err) {
-            console.error("Finansal veriler çekilemedi: ", err);
-          }
-
-          // Son Ödemeleri (Recent Payments) Özel API'den çekiyoruz
-          try {
-            const recentData = await api.get('/finance/transactions/recent');
-
-            // Kullanıcı IDsine göre filtreleme
-            const myRecentTrans = (recentData || []).filter(t =>
-              validUserIds.length > 0 ? validUserIds.includes(String(t.created_by)) : String(t.created_by) === String(user.id)
-            );
-
-            const monthNames = ['Oca', 'Şub', 'Mar', 'Nis', 'May', 'Haz', 'Tem', 'Ağu', 'Eyl', 'Eki', 'Kas', 'Ara'];
-            const mappedPayments = myRecentTrans.map(e => {
-              const eDate = new Date(e.transaction_date || e.created_at || Date.now());
-
-              let mappedType = 'İşlem';
-              if (e.payment_type === 'CASH') mappedType = 'Nakit';
-              else if (e.payment_type === 'WIRE') mappedType = 'Havale/EFT';
-              else if (e.payment_type === 'CREDIT_CARD') mappedType = 'Kredi Kartı';
-              else if (e.payment_type === 'CHECK') mappedType = 'Çek';
-
-              return {
-                recipient: e.description || e.title || 'Belirtilmedi',
-                amount: `₺${Number(e.amount).toLocaleString('tr-TR')}`,
-                date: `${eDate.getDate()} ${monthNames[eDate.getMonth()]}`,
-                status: mappedType
-              };
-            });
-
-            setRecentPayments(mappedPayments.length > 0 ? mappedPayments.slice(0, 4) : []);
-          } catch (rErr) {
-            console.error("Son ödemeler çekilemedi: ", rErr);
-          }
-
-          // Stok verisini çekme ve 'Kritik Stok' bilgisini hesaplama (100 altı miktar)
-          try {
-            const stockDataRes = await api.get('/inventory/stocks');
-            const myStocks = (stockDataRes || []).filter(s =>
-              String(s.company_id) === String(user.company_id)
-            );
-
-            // Quantity adedi 100 den az olanları bul
-            const criticals = myStocks.filter(s => (Number(s.quantity) || 0) < 100);
-            setCriticalStockCount(criticals.length);
-
-            // Pie chart için verileri mapple
-            if (myStocks.length > 0) {
-              const mappedStocks = myStocks.map((s, idx) => {
-                const matName = s.materials_catalog?.name || s.material_name || s.name || `Ürün ${idx + 1}`;
-                return {
-                  name: matName,
-                  value: Number(s.quantity) || 0,
-                  color: STOCK_COLORS[idx % STOCK_COLORS.length]
-                };
-              });
-              setStockDataState(mappedStocks.slice(0, 10)); // Grafiğin çok kalabalık olmaması için ilk 10'u gösterelim
-            }
-          } catch (stockErr) {
-            console.error("Stok verileri çekilemedi: ", stockErr);
-          }
-
-          // Satın Alma Taleplerini (Purchase Requests) çekiyoruz
-          try {
-            const prData = await api.get('/inventory/purchase-requests');
-            // Yalnızca bizim company_id'mize bağlı (validUserIds) kişilerin 'requested_by' taleplerini alıyoruz
-            const myPrs = (prData || []).filter(pr =>
-              validUserIds.length > 0 ? validUserIds.includes(String(pr.requested_by)) : String(pr.requested_by) === String(user.id)
-            );
-
-            const mappedPrs = myPrs.map(pr => {
-              const projectName = pr.projects?.name || 'Bilinmeyen Proje';
-              const matName = pr.materials_catalog?.name || pr.material_name || `Malzeme #${pr.material_id}`;
-
-              // Status mapping
-              let mappedStatus = 'Bekliyor';
-              const rawStat = String(pr.status || '').toUpperCase();
-              if (rawStat === 'APPROVED') mappedStatus = 'Onaylandı';
-              else if (rawStat === 'REJECTED') mappedStatus = 'Reddedildi';
-              else if (rawStat === 'PENDING') mappedStatus = 'Teklif Bekleniyor';
-              else if (rawStat === 'COMPLETED') mappedStatus = 'Tamamlandı';
-
-              return {
-                id: pr.id,
-                name: matName,
-                projectName,
-                quantity: pr.required_quantity || pr.quantity || 0,
-                status: mappedStatus
-              };
-            });
-            setPurchaseRequests(mappedPrs.slice(0, 5)); // En son 5 isteği gösterelim
-          } catch (prErr) {
-            console.error("Satın alma talepleri çekilemedi: ", prErr);
-          }
-
-          // Son Aktiviteleri Çekiyoruz (Activities)
-          try {
-            const actData = await api.get('/activities');
-
-            const myActs = (actData || []).filter(a => {
-              if (a.company_id) return String(a.company_id) === String(user.company_id);
-              if (a.user_id || a.created_by) return validUserIds.length > 0 ? validUserIds.includes(String(a.user_id || a.created_by)) : String(a.user_id || a.created_by) === String(user.id);
-              return true;
-            });
-
-            const calculateTimeAgo = (dateStr) => {
-              if (!dateStr) return 'Bilinmiyor';
-              const date = new Date(dateStr);
-              if (isNaN(date.getTime())) return 'Bilinmiyor';
-              const diffMs = new Date() - date;
-              const diffMins = Math.floor(diffMs / 60000);
-              if (diffMins < 60) return `${Math.max(diffMins, 1)} dk önce`;
-              const diffHours = Math.floor(diffMins / 60);
-              if (diffHours < 24) return `${diffHours} saat önce`;
-              return `${Math.floor(diffHours / 24)} gün önce`;
-            };
-
-            const mappedActs = myActs.map(a => {
-              const actType = String(a.type || a.action || 'system').toLowerCase();
-              let icon = <CheckCircle size={16} />;
-
-              if (actType.includes('project')) icon = <Briefcase size={16} />;
-              else if (actType.includes('pay') || actType.includes('financ') || actType.includes('income') || actType.includes('expense')) icon = <DollarSign size={16} />;
-              else if (actType.includes('material') || actType.includes('stock') || actType.includes('inventory') || actType.includes('buy')) icon = <Package size={16} />;
-              else if (actType.includes('user') || actType.includes('auth')) icon = <Users size={16} />;
-
-              return {
-                id: a.id || Math.random(),
-                title: a.title || a.action || 'Sistem Aktivitesi',
-                desc: a.description || a.details || 'Ayrıntı belirtilmedi.',
-                time: calculateTimeAgo(a.created_at || a.timestamp),
-                icon: icon,
-                rawDate: new Date(a.created_at || a.timestamp || 0)
-              };
-            });
-
-            // En yeniler en üstte olacak şekilde tarih sıralaması yapıyoruz
-            mappedActs.sort((a, b) => b.rawDate - a.rawDate);
-            setRecentActivities(mappedActs.slice(0, 6)); // ilk 6
-          } catch (actErr) {
-            console.error("Aktiviteler çekilemedi: ", actErr);
-          }
-
-          // Gelen veriyi frontend'in eski statik yapısına oturtarak bozulan kısımları (özellikle %'lik kısım) düzeltiyoruz
-          const mappedProjects = filteredData.map(p => {
-            let mappedStatus = 'Bilinmiyor';
+          const filtered = (data || []).filter(p => String(p.contractor_id) === String(user.company_id));
+          const mapped = filtered.map(p => {
             const rawStatus = String(p.status || '').toUpperCase();
-
-            if (rawStatus === 'IN_PROGRESS' || p.status === 'Devam Ediyor') {
-              mappedStatus = 'Devam Ediyor';
-            } else if (rawStatus === 'PLANNING' || p.status === 'Planlanıyor') {
-              mappedStatus = 'Planlanıyor';
-            } else if (rawStatus === 'COMPLETED' || p.status === 'Tamamlandı') {
-              mappedStatus = 'Tamamlandı';
-            } else if (rawStatus === 'DELAYED' || p.status === 'Gecikmede') {
-              mappedStatus = 'Gecikmede';
-            } else if (p.status === 'Bitiyor') {
-              mappedStatus = 'Bitiyor';
-            }
-
+            let mappedStatus = 'Bilinmiyor';
+            if (rawStatus === 'IN_PROGRESS' || p.status === 'Devam Ediyor') mappedStatus = 'Devam Ediyor';
+            else if (rawStatus === 'PLANNING' || p.status === 'Planlanıyor') mappedStatus = 'Planlanıyor';
+            else if (rawStatus === 'COMPLETED' || p.status === 'Tamamlandı') mappedStatus = 'Tamamlandı';
+            else if (rawStatus === 'DELAYED' || p.status === 'Gecikmede') mappedStatus = 'Gecikmede';
+            setProjects(prev => [...prev]); // trigger
             return {
               ...p,
-              name: p.name || p.project_name || p.title || 'İsimsiz Proje',
-              location: p.location || p.address || 'Konum Belirtilmemiş',
-              // API'de progress (ilerleme) alanı henüz yoksa, çubuk boş ve bozuk görünmesin diye 30-80 arası rastgele rakam girilir.
-              // PLANNING aşamasındaki projeler için bar %10-%20 gibi daha düşük doluluk oranında başlasın
-              progress: p.progress !== undefined && p.progress !== null
-                ? p.progress
-                : (mappedStatus === 'Planlanıyor' ? Math.floor(Math.random() * 20) + 5 : Math.floor(Math.random() * 50) + 30),
-              start: p.start || p.start_date || (p.created_at ? p.created_at.split('T')[0] : 'Belirtilmedi'),
-              end: p.end || p.end_date || 'Belirtilmedi',
-              status: mappedStatus
+              name: p.name || p.project_name || 'İsimsiz Proje',
+              status: mappedStatus,
+              progress: p.progress || (mappedStatus === 'Planlanıyor' ? 10 : 45)
             };
           });
+          setProjects(mapped);
+          setActiveProjectsCount(mapped.filter(p => p.status === 'Devam Ediyor').length);
+        } catch (e) { console.error("Projects error:", e); }
+        setLoading(prev => ({ ...prev, projects: false }));
+      };
 
-          setProjects(mappedProjects);
+      // 2. Finansal Veriler
+      const fetchFinanceData = async () => {
+        try {
+          const [trans, recent] = await Promise.all([
+            api.get('/finance/transactions'),
+            api.get('/finance/transactions/recent')
+          ]);
+          const myTrans = (trans || []).filter(t => validUserIds.includes(String(t.created_by)));
+          const monthNames = ['Oca', 'Şub', 'Mar', 'Nis', 'May', 'Haz', 'Tem', 'Ağu', 'Eyl', 'Eki', 'Kas', 'Ara'];
+          const monthly = monthNames.map(name => ({ name, income: 0, expense: 0 }));
+          let incomeSum = 0, expenseSum = 0;
 
-          // Sadece Devam Edenleri say
-          const active = mappedProjects.filter(p => p.status === 'Devam Ediyor');
-          setActiveProjectsCount(active.length);
-        }
-      } catch (error) {
-        console.error("Projeler çekilirken hata:", error);
-      }
+          myTrans.forEach(t => {
+            const date = new Date(t.transaction_date || t.created_at);
+            if (isNaN(date.getTime())) return;
+            const amount = Number(t.amount) || 0;
+            const isInc = (t.description || '').toLowerCase().includes('gelir') || (t.description || '').toLowerCase().includes('capital');
+            if (isInc) { monthly[date.getMonth()].income += amount; incomeSum += amount; }
+            else { monthly[date.getMonth()].expense += amount; expenseSum += amount; }
+          });
+          setTotalIncome(incomeSum); setTotalExpense(expenseSum); setFinancialData(monthly);
+          setRecentPayments((recent || []).filter(t => validUserIds.includes(String(t.created_by))).slice(0, 4).map(r => ({
+            recipient: r.description || 'İşlem',
+            amount: `₺${Number(r.amount).toLocaleString('tr-TR')}`,
+            date: new Date(r.transaction_date || r.created_at).toLocaleDateString('tr-TR', { day: 'numeric', month: 'short' }),
+            status: r.payment_type || 'Nakit'
+          })));
+        } catch (e) { console.error("Finance error:", e); }
+        setLoading(prev => ({ ...prev, finance: false }));
+      };
+
+      // 3. Stok & Talepler
+      const fetchStockData = async () => {
+        try {
+          const [stocks, prs] = await Promise.all([api.get('/inventory/stocks'), api.get('/inventory/purchase-requests')]);
+          const myStocks = (stocks || []).filter(s => String(s.company_id) === String(user.company_id));
+          setCriticalStockCount(myStocks.filter(s => (Number(s.quantity) || 0) < 100).length);
+          setStockDataState(myStocks.slice(0, 7).map((s, i) => ({ name: s.material_name || s.name || 'Ürün', value: Number(s.quantity) || 0, color: STOCK_COLORS[i % STOCK_COLORS.length] })));
+          setPurchaseRequests((prs || []).filter(p => validUserIds.includes(String(p.requested_by))).slice(0, 5).map(p => ({
+            id: p.id,
+            name: p.materials_catalog?.name || p.material_name || 'Bilinmeyen Malzeme',
+            projectName: p.projects?.name || 'Proje',
+            quantity: p.required_quantity || p.quantity || 0,
+            status: p.status === 'APPROVED' ? 'Onaylandı' : (p.status === 'REJECTED' ? 'Reddedildi' : 'Bekliyor')
+          })));
+        } catch (e) { console.error("Inventory error:", e); }
+        setLoading(prev => ({ ...prev, stock: false, requests: false }));
+      };
+
+      // 4. Aktiviteler (Zaman düzeltmesi burada)
+      const fetchActivitiesData = async () => {
+        try {
+          const acts = await api.get('/activities');
+          const myActs = (acts || []).filter(a => (a.company_id && String(a.company_id) === String(user.company_id)) || validUserIds.includes(String(a.user_id || a.created_by)));
+          const mapped = myActs.map(a => {
+            const calculateTimeAgo = (dateStr) => {
+              if (!dateStr) return '-';
+              // 3 SAAT EKLEME (UTC -> UTC+3)
+              const date = new Date(new Date(dateStr).getTime() + (3 * 60 * 60 * 1000));
+              const diff = new Date() - date;
+              if (diff < 3600000) return `${Math.max(Math.floor(diff / 60000), 1)} dk önce`;
+              if (diff < 86400000) return `${Math.floor(diff / 3600000)} saat önce`;
+              return `${Math.floor(diff / 86400000)} gün önce`;
+            };
+            return {
+              id: a.id || Math.random(),
+              title: a.title || a.action || 'Aktivite',
+              desc: a.description || '',
+              time: calculateTimeAgo(a.created_at || a.timestamp),
+              icon: <Clock size={16} />,
+              rawDate: new Date(a.created_at || a.timestamp)
+            };
+          }).sort((a, b) => b.rawDate - a.rawDate).slice(0, 6);
+          setRecentActivities(mapped);
+        } catch (e) { console.error("Activities error:", e); }
+        setLoading(prev => ({ ...prev, activities: false }));
+      };
+
+      // Paralel başlatıyoruz (Lazy Loading hissi)
+      fetchProjectsData();
+      fetchFinanceData();
+      fetchStockData();
+      fetchActivitiesData();
     };
 
-    fetchProjects();
+    loadAllDashboardData();
   }, [user]);
 
   console.log("Authenticated User:", user);
@@ -420,6 +311,7 @@ function Dashboard() {
               icon={<Briefcase size={20} />}
               trend="+2"
               trendUp={true}
+              loading={loading.projects}
             />
             <StatCard
               title="Toplam Gelir"
@@ -428,6 +320,7 @@ function Dashboard() {
               icon={<DollarSign size={20} />}
               trend="%0"
               trendUp={true}
+              loading={loading.finance}
             />
             <StatCard
               title="Toplam Gider"
@@ -436,6 +329,7 @@ function Dashboard() {
               icon={<ArrowDownRight size={20} />}
               trend="%0"
               trendUp={false}
+              loading={loading.finance}
             />
             <StatCard
               title="Kritik Stok"
@@ -443,6 +337,7 @@ function Dashboard() {
               subtext="Ürün tükenmek üzere"
               icon={<AlertTriangle size={20} />}
               alert={true}
+              loading={loading.stock}
             />
           </div>
 
@@ -456,7 +351,17 @@ function Dashboard() {
                 action={<button onClick={() => window.location.href = '/projects'} className="text-blue-600 text-sm font-medium hover:underline">Tümü</button>}
               />
               <div className="space-y-5 overflow-y-auto pr-2 max-h-[300px] scrollbar-hide">
-                {projects.map((project) => (
+                {loading.projects ? (
+                  [...Array(3)].map((_, i) => (
+                    <div key={i} className="p-3 animate-pulse border-b border-slate-50">
+                      <div className="flex justify-between items-start mb-2">
+                        <div className="h-4 bg-slate-100 rounded w-1/3"></div>
+                        <div className="h-4 bg-slate-50 rounded w-1/4"></div>
+                      </div>
+                      <div className="h-2 bg-slate-100 rounded w-full"></div>
+                    </div>
+                  ))
+                ) : projects.map((project) => (
                   <div key={project.id} className="group p-3 -mx-3 rounded-xl hover:bg-slate-50 transition-colors cursor-pointer">
                     <div className="flex justify-between items-start mb-2">
                       <div>
@@ -540,7 +445,16 @@ function Dashboard() {
                     </tr>
                   </thead>
                   <tbody className="text-sm">
-                    {purchaseRequests.length > 0 ? purchaseRequests.map((item, idx) => (
+                    {loading.requests ? (
+                      [...Array(3)].map((_, i) => (
+                        <tr key={i} className="animate-pulse">
+                          <td className="py-4 pl-2 border-b border-slate-50"><div className="h-4 bg-slate-100 rounded w-2/3"></div></td>
+                          <td className="py-4 border-b border-slate-50"><div className="h-4 bg-slate-50 rounded w-1/2"></div></td>
+                          <td className="py-4 border-b border-slate-50"><div className="h-4 bg-slate-100 rounded w-8"></div></td>
+                          <td className="py-4 pr-2 border-b border-slate-50"><div className="h-4 bg-slate-50 rounded w-16 ml-auto"></div></td>
+                        </tr>
+                      ))
+                    ) : purchaseRequests.length > 0 ? purchaseRequests.map((item, idx) => (
                       <tr key={idx} className="group hover:bg-slate-50 transition-colors">
                         <td className="py-4 pl-2 font-medium text-slate-700 border-b border-slate-50 group-last:border-none">
                           {item.name}
@@ -634,7 +548,17 @@ function Dashboard() {
                 <div className="absolute left-[19px] top-2 bottom-4 w-[1px] bg-slate-100"></div>
 
                 <div className="space-y-6">
-                  {recentActivities.length > 0 ? recentActivities.map((act) => (
+                  {loading.activities ? (
+                    [...Array(4)].map((_, i) => (
+                      <div key={i} className="flex gap-4 animate-pulse">
+                        <div className="w-10 h-10 bg-slate-100 rounded-xl"></div>
+                        <div className="flex-1 space-y-2 py-1">
+                          <div className="h-4 bg-slate-100 rounded w-1/3"></div>
+                          <div className="h-3 bg-slate-50 rounded w-2/3"></div>
+                        </div>
+                      </div>
+                    ))
+                  ) : recentActivities.length > 0 ? recentActivities.map((act) => (
                     <div key={act.id} className="relative flex gap-4 group">
                       <div className="relative z-10 w-10 h-10 rounded-xl bg-white border border-slate-100 shadow-sm flex items-center justify-center text-slate-500 group-hover:text-blue-600 group-hover:border-blue-100 transition-colors">
                         {act.icon}
@@ -661,7 +585,23 @@ function Dashboard() {
                 action={<button className="text-blue-600 text-sm font-medium hover:underline">Tümünü Gör</button>}
               />
               <div className="space-y-3">
-                {recentPayments.length > 0 ? recentPayments.map((pay, idx) => (
+                {loading.finance ? (
+                  [...Array(3)].map((_, i) => (
+                    <div key={i} className="flex items-center justify-between p-4 rounded-xl border border-slate-50 animate-pulse">
+                      <div className="flex items-center gap-4">
+                        <div className="w-10 h-10 bg-slate-100 rounded-full"></div>
+                        <div className="space-y-2">
+                          <div className="h-4 bg-slate-100 rounded w-24"></div>
+                          <div className="h-3 bg-slate-50 rounded w-16"></div>
+                        </div>
+                      </div>
+                      <div className="space-y-2 text-right">
+                        <div className="h-4 bg-slate-100 rounded w-16 ml-auto"></div>
+                        <div className="h-3 bg-slate-50 rounded w-12 ml-auto"></div>
+                      </div>
+                    </div>
+                  ))
+                ) : recentPayments.length > 0 ? recentPayments.map((pay, idx) => (
                   <div key={idx} className="flex items-center justify-between p-4 rounded-xl border border-slate-100 hover:border-blue-100 hover:bg-blue-50/30 transition-all cursor-pointer">
                     <div className="flex items-center gap-4">
                       <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-500">

@@ -2,6 +2,8 @@ import React, { useState, useRef, useEffect, useMemo } from 'react'; // useMemo 
 import Sidebar from '../components/Sidebar';
 import Navbar from '../components/Navbar';
 import CustomerEditModal from '../modals/CostumerEditModal';
+import { useAuth } from "../context/AuthContext";
+import { api } from '../api/client';
 import {
   Plus,
   Trash2,
@@ -13,30 +15,15 @@ import {
   CheckCircle
 } from 'lucide-react';
 
-// --- Mock Veri ve Yardımcı Fonksiyonlar ---
-const mockCompanies = [
-  { id: 1, name: 'AKSU İnşaat' },
-  { id: 2, name: 'Dolunay A.Ş.' },
-  { id: 3, name: 'İŞHAN Grup' },
-  { id: 4, name: 'İSKAMALL Holding' },
-  { id: 5, name: 'Yeni Vizyon Ltd.' },
-];
-
-const mockEmployees = [
-  { id: 101, fullName: 'Ali Yılmaz' },
-  { id: 102, fullName: 'Ahmet Korkmaz' },
-  { id: 103, fullName: 'Ayşe Demir' },
-  { id: 104, fullName: 'Veli Can' },
-];
-
-const getCompanyNameById = (companyId) => {
-  const company = mockCompanies.find(c => c.id === companyId);
+// --- Yardımcı Fonksiyonlar ---
+const getCompanyNameById = (companyId, companies) => {
+  const company = (companies || []).find(c => String(c.id) === String(companyId));
   return company ? company.name : 'Bilinmiyor';
 };
 
-const getEmployeeNameById = (employeeId) => {
-  const employee = mockEmployees.find(e => e.id === employeeId);
-  return employee ? employee.fullName : 'Bilinmiyor';
+const getEmployeeNameById = (employeeId, employees) => {
+  const employee = (employees || []).find(e => String(e.id) === String(employeeId));
+  return employee ? (employee.full_name || employee.name) : 'Bilinmiyor';
 };
 
 const initialCustomerList = [
@@ -105,7 +92,7 @@ const initialCustomerList = [
 const initialNewCustomerData = {
   company_id: '',
   employee_id: '',
-  customer_full_name: '',
+  full_name: '',
   identity_number: '',
   phone: '',
   email: '',
@@ -131,8 +118,11 @@ function SectionHeader({ title, action }) {
 
 function Customers() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [customers, setCustomers] = useState(initialCustomerList);
+  const [customers, setCustomers] = useState([]);
+  const [companies, setCompanies] = useState([]);
+  const [employees, setEmployees] = useState([]);
   const [selectedCustomers, setSelectedCustomers] = useState([]);
+  const { user } = useAuth();
 
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [newCustomerData, setNewCustomerData] = useState(initialNewCustomerData);
@@ -147,9 +137,59 @@ function Customers() {
 
   const [isFilterDropdownOpen, setIsFilterDropdownOpen] = useState(false);
   const [selectedFilterOption, setSelectedFilterOption] = useState('Varolan Kayıtlar'); // Varsayılan: Varolan Kayıtlar
+  const [loading, setLoading] = useState(true);
   const filterDropdownRef = useRef(null);
 
   const customerFilterOptions = ['Tümü', 'Varolan Kayıtlar', 'Silinmiş Kayıtlar'];
+
+  const fetchData = async () => {
+    setLoading(true);
+    try {
+      if (user && user.company_id) {
+        const [customersData, companiesData, usersData] = await Promise.all([
+          api.get('/customers'),
+          api.get('/companies'),
+          api.get('/users')
+        ]);
+
+        console.log("Fetched Customers Raw Data:", customersData);
+
+        // Filter companies and users for the current company
+        const filteredCompanies = (companiesData || []).filter(c => String(c.contractor_id) === String(user.company_id) || String(c.id) === String(user.company_id));
+        const filteredEmployees = (usersData || []).filter(u => String(u.company_id) === String(user.company_id));
+
+        setCompanies(filteredCompanies);
+        setEmployees(filteredEmployees);
+
+        const mappedCustomers = (customersData || [])
+          .filter(c => String(c.contractor_id) === String(user.company_id) || String(c.company_id) === String(user.company_id)) // Daha geniş filtreleme
+          .map(c => ({
+            id: c.id,
+            company_id: c.company_id,
+            employee_id: c.employee_id,
+            company_name: c.companies?.name || getCompanyNameById(c.company_id, filteredCompanies),
+            employee_name: c.users?.full_name || c.users?.name || getEmployeeNameById(c.employee_id, filteredEmployees),
+            full_name: c.full_name || c.customer_full_name || 'Bilinmiyor',
+            identity_number: c.identity_number || '-',
+            phone: c.phone || '-',
+            email: c.email || '-',
+            address: [c.district, c.city, c.address].filter(Boolean).join(', ') || '-',
+            created_at: c.created_at ? new Date(c.created_at).toLocaleDateString('tr-TR') : '-',
+            is_deleted: !!c.deleted_at || c.is_deleted || false
+          }));
+
+        setCustomers(mappedCustomers);
+      }
+    } catch (error) {
+      console.error("Customers data fetch error:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchData();
+  }, [user]);
 
   useEffect(() => {
     function handleClickOutside(event) {
@@ -192,14 +232,18 @@ function Customers() {
     }
   };
 
-  const handleDeleteSelected = () => {
+  const handleDeleteSelected = async () => {
     if (window.confirm(`${selectedCustomers.length} müşteriyi silinmiş olarak işaretlemek istediğinize emin misiniz?`)) {
-      setCustomers(prev =>
-        prev.map(c =>
-          selectedCustomers.includes(c.id) ? { ...c, is_deleted: true } : c
-        )
-      );
-      setSelectedCustomers([]);
+      try {
+        await Promise.all(selectedCustomers.map(id =>
+          api.put(`/customers/${id}`, { is_deleted: true })
+        ));
+        await fetchData();
+        setSelectedCustomers([]);
+      } catch (err) {
+        console.error("Silme hatası:", err);
+        alert("Silme işlemi sırasında hata oluştu.");
+      }
     }
   };
 
@@ -216,8 +260,8 @@ function Customers() {
     setNewCustomerData(prev => ({ ...prev, [name]: processedValue }));
   };
 
-  const handleAddNewCustomer = () => {
-    if (!newCustomerData.customer_full_name || !newCustomerData.phone) {
+  const handleAddNewCustomer = async () => {
+    if (!newCustomerData.full_name || !newCustomerData.phone) {
       alert('Müşteri Adı Soyadı ve Telefon alanları zorunludur.');
       return;
     }
@@ -226,14 +270,19 @@ function Customers() {
       return;
     }
 
-    const newCustomer = {
-      id: Date.now(),
-      ...newCustomerData,
-      created_at: new Date().toLocaleDateString('tr-TR'),
-      is_deleted: false,
-    };
-    setCustomers([newCustomer, ...customers]);
-    closeAddModal();
+    try {
+      const createData = {
+        ...newCustomerData,
+        contractor_id: user.company_id,
+        is_deleted: false
+      };
+      await api.post('/customers', createData);
+      await fetchData();
+      closeAddModal();
+    } catch (err) {
+      console.error("Müşteri ekleme hatası:", err);
+      alert("Müşteri eklenirken hata oluştu.");
+    }
   };
 
   const openEditModal = (customer) => {
@@ -247,8 +296,8 @@ function Customers() {
     const processedValue = (name === 'company_id' || name === 'employee_id') ? (value ? parseInt(value) : '') : value;
     setEditFormData(prev => ({ ...prev, [name]: processedValue }));
   };
-  const handleUpdateCustomer = () => {
-    if (!editFormData.customer_full_name || !editFormData.phone) {
+  const handleUpdateCustomer = async () => {
+    if (!editFormData.full_name || !editFormData.phone) {
       alert('Müşteri Adı Soyadı ve Telefon alanları boş bırakılamaz.');
       return;
     }
@@ -256,8 +305,24 @@ function Customers() {
       alert('Şirket Adı ve Sorumlu Çalışan alanları boş bırakılamaz.');
       return;
     }
-    setCustomers(prev => prev.map(c => c.id === selectedCustomerForEdit.id ? { ...c, ...editFormData } : c));
-    closeEditModal();
+
+    try {
+      const updateData = {
+        company_id: editFormData.company_id,
+        employee_id: editFormData.employee_id,
+        full_name: editFormData.full_name,
+        identity_number: editFormData.identity_number,
+        phone: editFormData.phone,
+        email: editFormData.email,
+        address: editFormData.address
+      };
+      await api.put(`/customers/${selectedCustomerForEdit.id}`, updateData);
+      await fetchData();
+      closeEditModal();
+    } catch (err) {
+      console.error("Müşteri güncelleme hatası:", err);
+      alert("Güncelleme sırasında hata oluştu.");
+    }
   };
 
   const toggleFilterDropdown = () => setIsFilterDropdownOpen(prev => !prev);
@@ -375,7 +440,18 @@ function Customers() {
                   </tr>
                 </thead>
                 <tbody className="text-sm">
-                  {filteredCustomers.length === 0 ? (
+                  {loading ? (
+                    [...Array(5)].map((_, i) => (
+                      <tr key={i} className="animate-pulse border-b border-slate-50">
+                        <td className="py-4 pl-2"><div className="w-4 h-4 bg-slate-100 rounded"></div></td>
+                        <td className="py-4 px-4"><div className="h-4 bg-slate-100 rounded w-24"></div></td>
+                        <td className="py-4 px-4"><div className="h-4 bg-slate-50 rounded w-32"></div></td>
+                        <td className="py-4 px-4"><div className="h-4 bg-slate-100 rounded w-40"></div></td>
+                        <td className="py-4 px-4"><div className="h-4 bg-slate-50 rounded w-28"></div></td>
+                        <td className="py-4 px-4 text-center"><div className="h-8 bg-slate-50 rounded-lg w-16 mx-auto"></div></td>
+                      </tr>
+                    ))
+                  ) : filteredCustomers.length === 0 ? (
                     <tr>
                       <td colSpan={6 + visibleColumns.length} className="py-8 text-center text-slate-500">
                         {selectedFilterOption === 'Tümü' ? 'Gösterilecek müşteri bulunamadı.' : `"${selectedFilterOption}" kayıtlarda müşteri bulunamadı.`}
@@ -387,9 +463,9 @@ function Customers() {
                         <td className="py-4 pl-2">
                           <input type="checkbox" checked={selectedCustomers.includes(customer.id)} onChange={() => handleSelectCustomer(customer.id)} className="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer accent-blue-600" />
                         </td>
-                        <td className="py-4 px-4 font-medium text-slate-700">{getCompanyNameById(customer.company_id)}</td>
-                        <td className="py-4 px-4 text-slate-700">{getEmployeeNameById(customer.employee_id)}</td>
-                        <td className="py-4 px-4 text-slate-700">{customer.customer_full_name}</td>
+                        <td className="py-4 px-4 font-medium text-slate-700">{customer.company_name}</td>
+                        <td className="py-4 px-4 text-slate-700">{customer.employee_name}</td>
+                        <td className="py-4 px-4 text-slate-700">{customer.full_name}</td>
                         <td className="py-4 px-4 text-slate-700">{customer.phone}</td>
                         {visibleColumns.includes('identity_number') && <td className="py-4 px-4 text-slate-500">{customer.identity_number}</td>}
                         {visibleColumns.includes('email') && <td className="py-4 px-4 text-slate-500">{customer.email}</td>}
@@ -415,8 +491,8 @@ function Customers() {
           onClose={closeEditModal}
           onChange={handleEditFormChange}
           onSave={handleUpdateCustomer}
-          mockCompanies={mockCompanies}
-          mockEmployees={mockEmployees}
+          companies={companies}
+          employees={employees}
         />
 
         {isAddModalOpen && (
@@ -432,7 +508,7 @@ function Customers() {
                 <div className="p-5 space-y-4 max-h-[70vh] overflow-y-auto">
                   <div>
                     <label className="block text-sm font-medium text-slate-700 mb-1">Müşteri Adı Soyadı</label>
-                    <input type="text" name="customer_full_name" value={newCustomerData.customer_full_name} onChange={handleNewCustomerChange} className="w-full border border-slate-200 rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-blue-600/30 focus:border-blue-600 transition-all text-sm" />
+                    <input type="text" name="full_name" value={newCustomerData.full_name} onChange={handleNewCustomerChange} className="w-full border border-slate-200 rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-blue-600/30 focus:border-blue-600 transition-all text-sm" />
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-slate-700 mb-1">Şirket Adı</label>
@@ -443,7 +519,7 @@ function Customers() {
                       className="w-full border border-slate-200 rounded-lg py-2.5 pl-3 pr-10 outline-none focus:ring-2 focus:ring-blue-600/30 focus:border-blue-600 transition-all text-sm bg-white cursor-pointer"
                     >
                       <option value="">Seçiniz</option>
-                      {mockCompanies.map(company => (
+                      {companies.map(company => (
                         <option key={company.id} value={company.id}>{company.name}</option>
                       ))}
                     </select>
@@ -457,8 +533,8 @@ function Customers() {
                       className="w-full border border-slate-200 rounded-lg py-2.5 pl-3 pr-10 outline-none focus:ring-2 focus:ring-blue-600/30 focus:border-blue-600 transition-all text-sm bg-white cursor-pointer"
                     >
                       <option value="">Seçiniz</option>
-                      {mockEmployees.map(employee => (
-                        <option key={employee.id} value={employee.id}>{employee.fullName}</option>
+                      {employees.map(employee => (
+                        <option key={employee.id} value={employee.id}>{employee.full_name || employee.name}</option>
                       ))}
                     </select>
                   </div>

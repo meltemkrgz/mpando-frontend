@@ -21,6 +21,7 @@ import {
 const getStatusClasses = (status) => {
   switch (status) {
     case 'Devam Ediyor': return 'bg-blue-50 text-blue-700 border-blue-200 text-[10px] font-bold px-2 py-1';
+    case 'Planlanıyor': return 'bg-purple-50 text-purple-700 border-purple-200 text-[10px] font-bold px-2 py-1';
     case 'Gecikmede': return 'bg-red-50 text-red-700 border-red-200 text-[10px] font-bold px-2 py-1';
     case 'Bitiyor': return 'bg-yellow-50 text-yellow-700 border-yellow-200 text-[10px] font-bold px-2 py-1';
     case 'Tamamlandı': return 'bg-green-50 text-green-700 border-green-200 text-[10px] font-bold px-2 py-1';
@@ -31,6 +32,7 @@ const getStatusClasses = (status) => {
 const getStatusIcon = (status) => {
   switch (status) {
     case 'Devam Ediyor': return <Clock size={14} />;
+    case 'Planlanıyor': return <Hourglass size={14} />;
     case 'Gecikmede': return <AlertCircle size={14} />;
     case 'Bitiyor': return <Hourglass size={14} />;
     case 'Tamamlandı': return <CheckCircle size={14} />;
@@ -43,7 +45,7 @@ const getProgressBarColor = (status) => {
     case 'Devam Ediyor': return 'bg-blue-600';
     case 'Planlanıyor': return 'bg-purple-500';
     case 'Gecikmede': return 'bg-red-500';
-    case 'Bitiyor': return 'bg-yellow-500'; // Bitiyor için sarı
+    case 'Bitiyor': return 'bg-yellow-500';
     case 'Tamamlandı': return 'bg-green-600';
     default: return 'bg-slate-500';
   }
@@ -57,7 +59,17 @@ const initialProjectList = [
   { id: 4, company: 'İSKAMALL Yaşam Merkezi ', unit: '6', address: '', status: 'Tamamlandı', created_at: '20.06.2023', created_by: 'Ayşe Demir', description: '', startDate: '2022-03-01', endDate: '2023-05-20', contractor: 'Veli Can' },
 ];
 
-const initialNewProjectData = { company: '', unit: '', address: '', status: 'Devam Ediyor', description: '', startDate: '', endDate: '', contractor: '' };
+const initialNewProjectData = {
+  company: '',
+  unit: '',
+  address: '',
+  status: 'Devam Ediyor',
+  description: '',
+  startDate: new Date().toISOString().split('T')[0],
+  endDate: '',
+  contractor: '',
+  contractor_id: ''
+};
 
 const optionalColumns = [
   { key: 'description', label: 'Açıklama' },
@@ -79,9 +91,11 @@ function SectionHeader({ title, action }) {
 function Projects() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [projects, setProjects] = useState([]);
+  const [siteEngineers, setSiteEngineers] = useState([]);
   const [selectedProjects, setSelectedProjects] = useState([]);
   const { user } = useAuth();
 
+  const [loading, setLoading] = useState(true);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [newProjectData, setNewProjectData] = useState(initialNewProjectData);
 
@@ -112,53 +126,92 @@ function Projects() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  useEffect(() => {
+    fetchProjects();
+  }, [user]);
+
+  const fetchProjects = async () => {
+    setLoading(true);
+    try {
+      if (user && user.company_id) {
+        // Müteahhitleri (Site Engineers) Çekme
+        try {
+          const usersData = await api.get('/users');
+          // Giriş yapan kullanıcının şirketindeki SITE_ENGINEER rolündekileri filtrele
+          const engineers = (usersData || []).filter(u =>
+            String(u.company_id) === String(user.company_id) &&
+            u.role === 'SITE_ENGINEER'
+          );
+          setSiteEngineers(engineers);
+        } catch (uErr) {
+          console.error("Kullanıcılar çekilemedi:", uErr);
+        }
+
+        const data = await api.get('/projects');
+        const filteredData = (data || []).filter(p => String(p.contractor_id) === String(user.company_id));
+
+        const mappedProjects = filteredData.map(p => {
+          let mappedStatus = 'Devam Ediyor';
+          const rawStatus = String(p.status || '').toUpperCase();
+
+          if (rawStatus === 'IN_PROGRESS' || p.status === 'Devam Ediyor') {
+            mappedStatus = 'Devam Ediyor';
+          } else if (rawStatus === 'PLANNING' || p.status === 'Planlanıyor') {
+            mappedStatus = 'Planlanıyor';
+          } else if (rawStatus === 'COMPLETED' || p.status === 'Tamamlandı') {
+            mappedStatus = 'Tamamlandı';
+          } else if (rawStatus === 'DELAYED' || p.status === 'Gecikmede') {
+            mappedStatus = 'Gecikmede';
+          } else if (p.status === 'Bitiyor') {
+            mappedStatus = 'Bitiyor';
+          }
+
+          return {
+            id: p.id,
+            company: p.name || p.project_name || p.title || 'İsimsiz Proje',
+            unit: p.total_units !== undefined && p.total_units !== null ? p.total_units : (p.unit_count !== undefined && p.unit_count !== null ? p.unit_count : '-'),
+            address: p.address || p.location || '',
+            status: mappedStatus,
+            progress: mappedStatus === 'Tamamlandı' ? 100
+              : (p.progress !== undefined && p.progress !== null
+                ? p.progress
+                : (mappedStatus === 'Planlanıyor' ? Math.floor(Math.random() * 20) + 5 : Math.floor(Math.random() * 50) + 30)),
+            created_at: p.created_at || 'Belirtilmedi',
+            created_by: p.creator_name && p.creator_name !== 'Admin' ? p.creator_name : (p.users?.email ? p.users.email.split('@')[0] : 'Sistem Yöneticisi'),
+            description: p.description || '',
+            startDate: (() => {
+              const raw = p.start_date || p.start || p.created_at;
+              if (!raw || raw === '-') return '';
+              if (raw.includes('.')) {
+                const parts = raw.split('.');
+                if (parts.length === 3) return `${parts[2]}-${parts[1]}-${parts[0]}`;
+              }
+              return raw.split('T')[0];
+            })(),
+            endDate: (() => {
+              const raw = p.end_date || p.end;
+              if (!raw || raw === '-') return '';
+              if (String(raw).includes('.')) {
+                const parts = raw.split('.');
+                if (parts.length === 3) return `${parts[2]}-${parts[1]}-${parts[0]}`;
+              }
+              return String(raw).split('T')[0];
+            })(),
+            contractor: p.users?.full_name || p.users?.name || p.creator_name || 'Atanmamış',
+            contractor_id: p.created_by
+          };
+        });
+        setProjects(mappedProjects);
+      }
+    } catch (err) {
+      console.error("Projeler sayfası API hatası: ", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Projeleri API'den Çekme
   useEffect(() => {
-    const fetchProjects = async () => {
-      try {
-        if (user && user.company_id) {
-          const data = await api.get('/projects');
-          const filteredData = (data || []).filter(p => String(p.contractor_id) === String(user.company_id));
-
-          const mappedProjects = filteredData.map(p => {
-            let mappedStatus = 'Devam Ediyor';
-            const rawStatus = String(p.status || '').toUpperCase();
-
-            if (rawStatus === 'IN_PROGRESS' || p.status === 'Devam Ediyor') {
-              mappedStatus = 'Devam Ediyor';
-            } else if (rawStatus === 'PLANNING' || p.status === 'Planlanıyor') {
-              mappedStatus = 'Planlanıyor';
-            } else if (rawStatus === 'COMPLETED' || p.status === 'Tamamlandı') {
-              mappedStatus = 'Tamamlandı';
-            } else if (rawStatus === 'DELAYED' || p.status === 'Gecikmede') {
-              mappedStatus = 'Gecikmede';
-            } else if (p.status === 'Bitiyor') {
-              mappedStatus = 'Bitiyor';
-            }
-
-            return {
-              id: p.id,
-              company: p.name || p.project_name || p.title || 'İsimsiz Proje',
-              unit: p.total_units !== undefined && p.total_units !== null ? p.total_units : (p.unit_count !== undefined && p.unit_count !== null ? p.unit_count : '-'),
-              address: p.address || p.location || '',
-              status: mappedStatus,
-              progress: p.progress !== undefined && p.progress !== null
-                ? p.progress
-                : (mappedStatus === 'Planlanıyor' ? Math.floor(Math.random() * 20) + 5 : Math.floor(Math.random() * 50) + 30),
-              created_at: p.created_at ? p.created_at.split('T')[0] : 'Belirtilmedi',
-              created_by: p.creator_name || (p.users ? p.users.email : 'Sistem'),
-              description: p.description || '',
-              startDate: p.start_date || p.start || '',
-              endDate: p.end_date || p.end || '',
-              contractor: p.companies?.name || 'Şirket Personeli',
-            };
-          });
-          setProjects(mappedProjects);
-        }
-      } catch (err) {
-        console.error("Projeler sayfası API hatası: ", err);
-      }
-    };
     fetchProjects();
   }, [user]);
 
@@ -177,10 +230,16 @@ function Projects() {
     }
   };
 
-  const handleDeleteSelected = () => {
+  const handleDeleteSelected = async () => {
     if (window.confirm(`${selectedProjects.length} projeyi silmek istediğinize emin misiniz?`)) {
-      setProjects(prev => prev.filter(p => !selectedProjects.includes(p.id)));
-      setSelectedProjects([]);
+      try {
+        await Promise.all(selectedProjects.map(id => api.delete(`/projects/${id}`)));
+        setProjects(prev => prev.filter(p => !selectedProjects.includes(p.id)));
+        setSelectedProjects([]);
+      } catch (err) {
+        console.error("Proje silme hatası:", err);
+        alert("Projeler silinirken bir hata oluştu.");
+      }
     }
   };
 
@@ -196,25 +255,67 @@ function Projects() {
     setNewProjectData(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleAddNewProject = () => {
+  const handleAddNewProject = async () => {
     if (!newProjectData.company || !newProjectData.unit) { alert('Proje Adı ve Ünite alanları zorunludur.'); return; }
-    const newProject = {
-      id: Date.now(),
-      ...newProjectData,
-      created_at: new Date().toLocaleDateString('tr-TR'),
-      created_by: 'Mevcut Kullanıcı' // Bu değeri dinamik olarak alın
-    };
-    setProjects([newProject, ...projects]);
-    closeAddModal();
+    try {
+      const status = newProjectData.status;
+      let progress = 0;
+      if (status === 'Tamamlandı') progress = 100;
+      else if (status === 'Devam Ediyor') progress = 10;
+      else if (status === 'Planlanıyor') progress = 0;
+      else if (status === 'Gecikmede') progress = 5;
+
+      const createData = {
+        name: newProjectData.company,
+        address: newProjectData.address,
+        unit_count: 1, // unit field is used for display, backend expects unit_count
+        status: status === 'Devam Ediyor' ? 'IN_PROGRESS' :
+          status === 'Tamamlandı' ? 'COMPLETED' :
+            status === 'Planlanıyor' ? 'PLANNING' :
+              status === 'Gecikmede' ? 'DELAYED' : 'IN_PROGRESS',
+        description: newProjectData.description,
+        end_date: newProjectData.endDate || null,
+        created_by: newProjectData.contractor_id || user.id,
+        contractor_id: user.company_id
+      };
+
+      await api.post('/projects', createData);
+      await fetchProjects();
+      closeAddModal();
+    } catch (err) {
+      console.error("Proje oluşturma hatası:", err);
+      alert("Proje oluşturulurken bir hata oluştu: " + err.message);
+    }
   };
 
   const openEditModal = (project) => { setSelectedProjectForEdit(project); setEditFormData({ ...project }); setIsEditModalOpen(true); };
   const closeEditModal = () => { setIsEditModalOpen(false); setTimeout(() => { setSelectedProjectForEdit(null); setEditFormData(null); }, 300); };
   const handleEditFormChange = (e) => { const { name, value } = e.target; setEditFormData(prev => ({ ...prev, [name]: value })); };
-  const handleUpdateProject = () => {
+  const handleUpdateProject = async () => {
     if (!editFormData.company) { alert('Proje Adı boş bırakılamaz.'); return; }
-    setProjects(prev => prev.map(p => p.id === selectedProjectForEdit.id ? { ...p, ...editFormData } : p));
-    closeEditModal();
+    try {
+      const status = editFormData.status;
+
+      const updateData = {
+        name: editFormData.company,
+        address: editFormData.address,
+        status: status === 'Devam Ediyor' ? 'IN_PROGRESS' :
+          status === 'Tamamlandı' ? 'COMPLETED' :
+            status === 'Planlanıyor' ? 'PLANNING' :
+              status === 'Gecikmede' ? 'DELAYED' :
+                status === 'Bitiyor' ? 'FINISHING' : 'IN_PROGRESS',
+        description: editFormData.description,
+        end_date: editFormData.endDate || null,
+        created_by: editFormData.contractor_id || null
+      };
+
+      await api.put(`/projects/${selectedProjectForEdit.id}`, updateData);
+      await fetchProjects(); // Backend'den güncel veriyi çekerek senkronize olalım
+      closeEditModal();
+    } catch (err) {
+      console.error("Proje güncelleme hatası:", err);
+      alert("Proje güncellenirken bir hata oluştu: " + err.message);
+    }
   };
 
   const toggleFilterDropdown = () => setIsFilterDropdownOpen(prev => !prev);
@@ -337,7 +438,19 @@ function Projects() {
                   </tr>
                 </thead>
                 <tbody className="text-sm">
-                  {filteredProjects.length === 0 ? (
+                  {loading ? (
+                    [...Array(5)].map((_, i) => (
+                      <tr key={i} className="animate-pulse border-b border-slate-50">
+                        <td className="py-4 pl-2"><div className="w-4 h-4 bg-slate-100 rounded"></div></td>
+                        <td className="py-4 px-4"><div className="h-4 bg-slate-100 rounded w-32"></div></td>
+                        <td className="py-4 px-4"><div className="h-6 bg-slate-50 rounded-full w-20"></div></td>
+                        <td className="py-4 px-4"><div className="h-2 bg-slate-100 rounded w-full"></div></td>
+                        <td className="py-4 px-4"><div className="h-4 bg-slate-50 rounded w-12"></div></td>
+                        <td className="py-4 px-4"><div className="h-4 bg-slate-100 rounded w-24"></div></td>
+                        <td className="py-4 px-4 text-center"><div className="h-8 bg-slate-50 rounded-lg w-16 mx-auto"></div></td>
+                      </tr>
+                    ))
+                  ) : filteredProjects.length === 0 ? (
                     <tr>
                       <td colSpan={6 + visibleColumns.length} className="py-8 text-center text-slate-500">
                         {selectedStatusFilter === 'Hepsi' ? 'Gösterilecek proje bulunamadı.' : `"${selectedStatusFilter}" durumunda proje bulunamadı.`}
@@ -392,6 +505,7 @@ function Projects() {
         <ProjectEditModal
           isOpen={isEditModalOpen}
           projectData={editFormData}
+          contractors={siteEngineers}
           onClose={closeEditModal}
           onChange={handleEditFormChange}
           onSave={handleUpdateProject}
@@ -400,6 +514,7 @@ function Projects() {
         <NewProjectModal
           isOpen={isAddModalOpen}
           formData={newProjectData}
+          contractors={siteEngineers}
           onClose={closeAddModal}
           onChange={handleNewProjectChange}
           onAdd={handleAddNewProject}
