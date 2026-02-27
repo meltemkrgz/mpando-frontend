@@ -408,7 +408,7 @@ function Projects() {
             }
           />
 
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
+          <div className="space-y-6">
             {selectedProjects.length > 0 && (
               <div className="flex flex-wrap items-center justify-between border border-slate-200 p-3 rounded-xl mb-4 animate-in fade-in slide-in-from-top-2 duration-200">
                 <div className="flex items-center gap-3 mb-2 sm:mb-0">
