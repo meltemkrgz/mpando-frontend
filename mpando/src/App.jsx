@@ -6,6 +6,7 @@ import Dashboard from "./pages/Dashboard";
 import Projects from "./pages/Projects";
 import ProjectDetails from "./pages/ProjectDetails";
 import Customers from "./pages/Customers";
+import Sales from "./pages/Sales";
 
 function App() {
   return (
@@ -45,6 +46,15 @@ function App() {
           element={
             <PrivateRoute>
               <Customers />
+            </PrivateRoute>
+          }
+        />
+
+        <Route
+          path="/sales"
+          element={
+            <PrivateRoute>
+              <Sales />
             </PrivateRoute>
           }
         />
