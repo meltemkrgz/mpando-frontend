@@ -348,7 +348,7 @@ const navigationGroups = [
       { name: "Projeler", icon: icons.Projects, href: "/projects" },
       { name: "Müşteriler", icon: icons.Personnel, href: "/customers" },
       { name: "Satış Kayıtları", icon: icons.Sales, href: "/sales" },
-      { name: "2. El Emlak", icon: icons.SecondHandListings, href: "/second-hand-listings" },
+      { name: "2. El İlanlar", icon: icons.SecondHandListings, href: "/second-hand-listings" },
     ],
   },
 ];

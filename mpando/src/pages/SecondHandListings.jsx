@@ -223,11 +223,11 @@ function SecondHandListings() {
     <div className="flex min-h-screen bg-[#F5F5F7] font-sans text-slate-800">
       <Sidebar isMobileMenuOpen={isMobileMenuOpen} closeMobileMenu={() => setIsMobileMenuOpen(false)} />
       <main className="flex-1 overflow-y-auto h-screen pt-16 md:pt-0 relative">
-        <Navbar title="2. El Portföy" toggleMobileMenu={toggleMobileMenu} />
+        <Navbar title="2. El İlanlar" toggleMobileMenu={toggleMobileMenu} />
 
         <div className="px-4 sm:px-6 md:px-8 pb-12 pt-4 space-y-8">
           <SectionHeader
-            title="2. El Emlak Listesi"
+            title="2. El İlan Listesi"
             action={
               <>
                 {/* Durum Filtresi */}
