@@ -1,4 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+
 import Sidebar from '../components/Sidebar';
 import Navbar from '../components/Navbar';
 import ProjectEditModal from '../modals/ProjectEditModal';
@@ -15,7 +17,13 @@ import {
   AlertCircle,
   Hourglass,
   CheckCircle,
-  Filter
+  Filter,
+  Search,
+  Briefcase,
+  Hash,
+  Users,
+  MapPin,
+  Calendar
 } from 'lucide-react';
 
 const getStatusClasses = (status) => {
@@ -94,6 +102,7 @@ function Projects() {
   const [siteEngineers, setSiteEngineers] = useState([]);
   const [selectedProjects, setSelectedProjects] = useState([]);
   const { user } = useAuth();
+  const navigate = useNavigate();
 
   const [loading, setLoading] = useState(true);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -419,85 +428,119 @@ function Projects() {
               </div>
             )}
 
-            <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse min-w-max">
-                <thead>
-                  <tr className="text-xs font-semibold text-slate-400 border-b border-slate-100">
-                    <th className="pb-3 pl-2 w-10"></th>
-                    <th className="pb-3 px-4">Proje Adı</th>
-                    <th className="pb-3 px-4">Durum</th>
-                    <th className="pb-3 px-4 min-w-[150px]">İlerleme</th>
-                    <th className="pb-3 px-4">Ünite</th>
-                    {visibleColumns.includes('description') && <th className="pb-3 px-4">Açıklama</th>}
-                    {visibleColumns.includes('startDate') && <th className="pb-3 px-4">Başlangıç Tarihi</th>}
-                    {visibleColumns.includes('endDate') && <th className="pb-3 px-4">Bitiş Tarihi</th>}
-                    {visibleColumns.includes('contractor') && <th className="pb-3 px-4">Müteahhit</th>}
-                    <th className="pb-3 px-4">Oluşturan</th>
-                    {visibleColumns.includes('created_at') && <th className="pb-3 px-4">Oluşturulma Tarihi</th>}
-                    <th className="pb-3 px-4 text-center">İşlemler</th>
-                  </tr>
-                </thead>
-                <tbody className="text-sm">
-                  {loading ? (
-                    [...Array(5)].map((_, i) => (
-                      <tr key={i} className="animate-pulse border-b border-slate-50">
-                        <td className="py-4 pl-2"><div className="w-4 h-4 bg-slate-100 rounded"></div></td>
-                        <td className="py-4 px-4"><div className="h-4 bg-slate-100 rounded w-32"></div></td>
-                        <td className="py-4 px-4"><div className="h-6 bg-slate-50 rounded-full w-20"></div></td>
-                        <td className="py-4 px-4"><div className="h-2 bg-slate-100 rounded w-full"></div></td>
-                        <td className="py-4 px-4"><div className="h-4 bg-slate-50 rounded w-12"></div></td>
-                        <td className="py-4 px-4"><div className="h-4 bg-slate-100 rounded w-24"></div></td>
-                        <td className="py-4 px-4 text-center"><div className="h-8 bg-slate-50 rounded-lg w-16 mx-auto"></div></td>
-                      </tr>
-                    ))
-                  ) : filteredProjects.length === 0 ? (
-                    <tr>
-                      <td colSpan={6 + visibleColumns.length} className="py-8 text-center text-slate-500">
-                        {selectedStatusFilter === 'Hepsi' ? 'Gösterilecek proje bulunamadı.' : `"${selectedStatusFilter}" durumunda proje bulunamadı.`}
-                      </td>
-                    </tr>
-                  ) : (
-                    filteredProjects.map(proj => (
-                      <tr key={proj.id} className={`group transition-colors border-b border-slate-50 last:border-none ${selectedProjects.includes(proj.id) ? 'bg-blue-50/50' : 'hover:bg-slate-50'}`}>
-                        <td className="py-4 pl-2">
-                          <input type="checkbox" checked={selectedProjects.includes(proj.id)} onChange={() => handleSelectProject(proj.id)} className="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer accent-blue-600" />
-                        </td>
-                        <td className="py-4 px-4 font-medium text-slate-700">{proj.company}</td>
-                        <td className="py-4 px-4 text-slate-700">
-                          <span className={`inline-flex items-center gap-1 border rounded-full ${getStatusClasses(proj.status)}`}>
-                            {getStatusIcon(proj.status)} {proj.status}
-                          </span>
-                        </td>
-                        <td className="py-4 px-4 align-middle">
-                          <div className="flex items-center gap-2">
-                            <div className="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden flex-1">
-                              <div
-                                className={`h-1.5 rounded-full ${getProgressBarColor(proj.status)}`}
-                                style={{ width: `${proj.progress}%` }}
-                              ></div>
-                            </div>
-                            <span className="text-xs font-semibold text-slate-500 w-8">
-                              %{proj.progress}
-                            </span>
+            <div>
+              {loading ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {[...Array(6)].map((_, i) => (
+                    <div key={i} className="bg-white rounded-2xl border border-slate-100 p-6 animate-pulse shadow-sm">
+                      <div className="flex justify-between mb-4">
+                        <div className="h-6 bg-slate-100 rounded w-2/3"></div>
+                        <div className="h-6 bg-slate-50 rounded-full w-20"></div>
+                      </div>
+                      <div className="space-y-3">
+                        <div className="h-4 bg-slate-100 rounded w-full"></div>
+                        <div className="h-4 bg-slate-50 rounded w-5/6"></div>
+                        <div className="h-8 bg-slate-100 rounded-xl w-full mt-4"></div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : filteredProjects.length === 0 ? (
+                <div className="py-12 text-center text-slate-500 bg-slate-50 rounded-2xl border border-dashed border-slate-200">
+                  <p>{selectedStatusFilter === 'Hepsi' ? 'Gösterilecek proje bulunamadı.' : `"${selectedStatusFilter}" durumunda proje bulunamadı.`}</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {filteredProjects.map(proj => (
+                    <div
+                      key={proj.id}
+                      onClick={() => navigate(`/projects/${proj.id}`)}
+                      className={`relative group bg-white rounded-2xl border transition-all p-6 cursor-pointer ${selectedProjects.includes(proj.id) ? 'border-blue-500 ring-2 ring-blue-500/10 bg-blue-50/10' : 'border-slate-200 hover:border-blue-200 hover:shadow-md'}`}
+                    >
+                      {/* Selection Checkbox */}
+                      <div className="absolute top-4 left-4 z-10" onClick={(e) => e.stopPropagation()}>
+                        <input
+                          type="checkbox"
+                          checked={selectedProjects.includes(proj.id)}
+                          onChange={() => handleSelectProject(proj.id)}
+                          className="w-5 h-5 rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer accent-blue-600"
+                        />
+                      </div>
+
+                      {/* Card Content */}
+                      <div className="flex justify-between items-start mb-4 pl-8">
+                        <div>
+                          <h3 className="text-lg font-bold text-slate-800 group-hover:text-blue-600 transition-colors line-clamp-1" title={proj.company}>
+                            {proj.company}
+                          </h3>
+                          <p className="text-xs text-slate-400 font-medium">#{proj.id}</p>
+                        </div>
+                        <span className={`inline-flex items-center gap-1 border rounded-full px-2.5 py-1 text-xs font-medium shrink-0 ${getStatusClasses(proj.status)}`}>
+                          {getStatusIcon(proj.status)} {proj.status}
+                        </span>
+                      </div>
+
+                      <div className="space-y-4">
+                        {/* Progress */}
+                        <div className="space-y-1.5">
+                          <div className="flex justify-between text-xs font-semibold">
+                            <span className="text-slate-500">İlerleme</span>
+                            <span className="text-blue-600">%{proj.progress}</span>
                           </div>
-                        </td>
-                        <td className="py-4 px-4 text-slate-700">{proj.unit}</td>
-                        {visibleColumns.includes('description') && <td className="py-4 px-4 text-slate-500 max-w-xs truncate" title={proj.description}>{proj.description}</td>}
-                        {visibleColumns.includes('startDate') && <td className="py-4 px-4 text-slate-500">{proj.startDate}</td>}
-                        {visibleColumns.includes('endDate') && <td className="py-4 px-4 text-slate-500">{proj.endDate}</td>}
-                        {visibleColumns.includes('contractor') && <td className="py-4 px-4 text-slate-500">{proj.contractor}</td>}
-                        <td className="py-4 px-4 text-slate-500">{proj.created_by}</td>
-                        {visibleColumns.includes('created_at') && <td className="py-4 px-4 text-slate-500">{proj.created_at}</td>}
-                        <td className="py-4 px-4 text-center">
-                          <button onClick={() => openEditModal(proj)} className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 text-sm font-medium text-slate-600 bg-white border border-slate-200 hover:text-blue-600 hover:border-blue-200 hover:bg-blue-50 rounded-lg transition-all shadow-sm">
-                            <Pencil size={14} /> Düzenle
+                          <div className="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
+                            <div
+                              className={`h-full rounded-full transition-all duration-500 ${getProgressBarColor(proj.status)}`}
+                              style={{ width: `${proj.progress}%` }}
+                            ></div>
+                          </div>
+                        </div>
+
+                        {/* Info Grid */}
+                        <div className="grid grid-cols-2 gap-4 pt-2">
+                          <div className="flex items-center gap-2 text-slate-600">
+                            <div className="p-1.5 bg-slate-50 rounded-lg"><Hash size={14} className="text-slate-400" /></div>
+                            <div>
+                              <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Ünite</p>
+                              <p className="text-xs font-semibold">{proj.unit}</p>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2 text-slate-600">
+                            <div className="p-1.5 bg-slate-50 rounded-lg"><Users size={14} className="text-slate-400" /></div>
+                            <div>
+                              <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Sorumlu</p>
+                              <p className="text-xs font-semibold truncate max-w-[80px]" title={proj.contractor}>{proj.contractor}</p>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Expandable Info Area */}
+                        <div className="space-y-2 pt-2 border-t border-slate-50">
+                          {proj.address && (
+                            <div className="flex items-start gap-2 text-slate-500">
+                              <MapPin size={14} className="mt-0.5 shrink-0" />
+                              <p className="text-xs line-clamp-1" title={proj.address}>{proj.address}</p>
+                            </div>
+                          )}
+                          <div className="flex items-center gap-2 text-slate-400">
+                            <Calendar size={14} className="shrink-0" />
+                            <p className="text-[11px] font-medium">Bitiş: {proj.endDate || '-'}</p>
+                          </div>
+                        </div>
+
+                        {/* Actions */}
+                        <div className="flex items-center gap-2 pt-2">
+                          <button
+                            onClick={(e) => { e.stopPropagation(); openEditModal(proj); }}
+                            className="flex-1 inline-flex items-center justify-center gap-2 px-3 py-2 text-sm font-semibold text-slate-700 bg-slate-50 hover:bg-blue-50 hover:text-blue-600 rounded-xl transition-all border border-transparent hover:border-blue-100"
+                          >
+                            <Pencil size={15} /> Düzenle
                           </button>
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         </div>

@@ -4,6 +4,7 @@ import PrivateRoute from "./components/PrivateRoute";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import Projects from "./pages/Projects";
+import ProjectDetails from "./pages/ProjectDetails";
 import Customers from "./pages/Customers";
 
 function App() {
@@ -26,6 +27,15 @@ function App() {
           element={
             <PrivateRoute>
               <Projects />
+            </PrivateRoute>
+          }
+        />
+
+        <Route
+          path="/projects/:id"
+          element={
+            <PrivateRoute>
+              <ProjectDetails />
             </PrivateRoute>
           }
         />
