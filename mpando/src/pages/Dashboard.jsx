@@ -58,7 +58,7 @@ const getStatusClasses = (status) => {
 const getStatusIcon = (status) => {
   switch (status) {
     case 'Devam Ediyor': return <Clock size={14} />;
-    case 'Planlanıyor': return <Briefcase size={14} />;
+    case 'Planlanıyor': return <Hourglass size={14} />; // Dashboard'da da Hourglass olsun (Lucide'de Hourglass var)
     case 'Gecikmede': return <AlertCircle size={14} />;
     case 'Bitiyor': return <Hourglass size={14} />;
     case 'Tamamlandı': return <CheckCircle size={14} />;
@@ -181,17 +181,21 @@ function Dashboard() {
           const filtered = (data || []).filter(p => String(p.contractor_id) === String(user.company_id));
           const mapped = filtered.map(p => {
             const rawStatus = String(p.status || '').toUpperCase();
-            let mappedStatus = 'Bilinmiyor';
+            let mappedStatus = 'Devam Ediyor';
             if (rawStatus === 'IN_PROGRESS' || p.status === 'Devam Ediyor') mappedStatus = 'Devam Ediyor';
             else if (rawStatus === 'PLANNING' || p.status === 'Planlanıyor') mappedStatus = 'Planlanıyor';
             else if (rawStatus === 'COMPLETED' || p.status === 'Tamamlandı') mappedStatus = 'Tamamlandı';
             else if (rawStatus === 'DELAYED' || p.status === 'Gecikmede') mappedStatus = 'Gecikmede';
-            setProjects(prev => [...prev]); // trigger
+            else if (p.status === 'Bitiyor') mappedStatus = 'Bitiyor';
+
             return {
               ...p,
               name: p.name || p.project_name || 'İsimsiz Proje',
               status: mappedStatus,
-              progress: p.progress || (mappedStatus === 'Planlanıyor' ? 10 : 45)
+              progress: mappedStatus === 'Tamamlandı' ? 100
+                : (p.progress !== undefined && p.progress !== null
+                  ? p.progress
+                  : (mappedStatus === 'Planlanıyor' ? Math.floor(Math.random() * 20) + 5 : Math.floor(Math.random() * 50) + 30))
             };
           });
           setProjects(mapped);

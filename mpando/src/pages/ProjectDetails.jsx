@@ -67,17 +67,8 @@ const getProgressBarColor = (status) => {
     }
 };
 
-const ProjectStructure = ({ blocks }) => {
-    const [expandedBlocks, setExpandedBlocks] = useState({});
-
+const ProjectStructure = ({ blocks, projectId, navigate }) => {
     if (!blocks || blocks.length === 0) return null;
-
-    const toggleBlock = (blockId) => {
-        setExpandedBlocks(prev => ({
-            ...prev,
-            [blockId]: !prev[blockId]
-        }));
-    };
 
     return (
         <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 md:p-8 mt-6">
@@ -85,69 +76,30 @@ const ProjectStructure = ({ blocks }) => {
                 <Building2 size={20} className="text-blue-600" />
                 Proje Yapısı (Bloklar ve Üniteler)
             </h2>
-            <div className="space-y-4">
-                {blocks.map(block => {
-                    const isExpanded = !!expandedBlocks[block.id];
-                    return (
-                        <div key={block.id} className="border border-slate-100 rounded-xl overflow-hidden shadow-sm transition-all duration-200">
-                            <div
-                                className="bg-slate-50 p-4 font-bold text-slate-800 flex items-center justify-between border-b border-slate-100 cursor-pointer hover:bg-slate-100 transition-colors"
-                                onClick={() => toggleBlock(block.id)}
-                            >
-                                <div className="flex items-center gap-2">
-                                    <Building2 size={18} className="text-slate-500" />
-                                    {block.name}
-                                </div>
-                                <div className="flex items-center gap-4">
-                                    <span className="text-xs font-semibold text-slate-500 bg-white px-2 py-1 rounded-md border border-slate-200 shadow-sm">
-                                        {block.floor_count} Kat
-                                    </span>
-                                    {isExpanded ? <ChevronUp size={18} className="text-slate-400" /> : <ChevronDown size={18} className="text-slate-400" />}
-                                </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {blocks.map(block => (
+                    <div
+                        key={block.id}
+                        onClick={() => navigate(`/projects/${projectId}/blocks/${block.id}`)}
+                        className="bg-slate-50 border border-slate-100 rounded-xl p-5 shadow-sm hover:shadow-md hover:border-blue-200 hover:bg-white transition-all cursor-pointer group"
+                    >
+                        <div className="flex items-center justify-between mb-4">
+                            <div className="flex items-center gap-2 font-bold text-slate-800 group-hover:text-blue-700 transition-colors">
+                                <Building2 size={24} className="text-blue-500" />
+                                {block.name}
                             </div>
-                            {isExpanded && (
-                                <div className="p-4 bg-white space-y-4 animate-in fade-in slide-in-from-top-2 duration-200">
-                                    {(block.floors || []).map(floor => (
-                                        <div key={floor.id} className="ml-2 md:ml-4 border-l-2 border-slate-100 pl-4 py-2">
-                                            <div className="font-semibold text-slate-700 flex items-center gap-2 mb-3">
-                                                <Layers size={16} className="text-blue-500" />
-                                                {floor.floor_number}. Kat <span className="text-xs text-slate-400 font-normal ml-2">(Yükseklik: {floor.height_cm}cm)</span>
-                                            </div>
-                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                                {(floor.units || []).map(unit => (
-                                                    <div key={unit.id} className="border border-slate-100 rounded-lg p-3 bg-slate-50/50 hover:bg-slate-50 transition-colors">
-                                                        <div className="font-semibold text-sm text-slate-800 flex items-center justify-between mb-2">
-                                                            <div className="flex items-center gap-1.5">
-                                                                <Home size={14} className="text-orange-500" />
-                                                                {unit.unit_number}
-                                                            </div>
-                                                            <span className="text-[10px] bg-orange-100 text-orange-700 px-2 py-0.5 rounded-full font-bold shadow-sm">
-                                                                {unit.unit_type}
-                                                            </span>
-                                                        </div>
-                                                        <div className="space-y-1.5 mt-3">
-                                                            {(unit.rooms || []).map(room => (
-                                                                <div key={room.id} className="flex items-center justify-between text-xs text-slate-600 bg-white rounded border border-slate-100 px-2 py-1.5 shadow-sm">
-                                                                    <div className="flex items-center gap-1.5">
-                                                                        <Maximize size={12} className="text-slate-400" />
-                                                                        {room.name}
-                                                                    </div>
-                                                                    <div className="flex items-center gap-3 font-medium text-slate-500">
-                                                                        <span title="Alan">{room.area_m2} m²</span>
-                                                                    </div>
-                                                                </div>
-                                                            ))}
-                                                        </div>
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            )}
+                            <span className="text-xs font-semibold text-slate-500 bg-white px-2 py-1 rounded-md border border-slate-200 shadow-sm">
+                                {block.floor_count} Kat
+                            </span>
                         </div>
-                    );
-                })}
+                        <div className="flex justify-between items-center text-sm">
+                            <span className="text-slate-500">Detayları Gör</span>
+                            <div className="w-8 h-8 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center group-hover:bg-blue-600 group-hover:text-white transition-colors">
+                                <ArrowLeft size={16} className="rotate-180" />
+                            </div>
+                        </div>
+                    </div>
+                ))}
             </div>
         </div>
     );
@@ -355,7 +307,7 @@ function ProjectDetails() {
                                         </div>
                                     </div>
                                 </div>
-                                <ProjectStructure blocks={project.blocks} />
+                                <ProjectStructure blocks={project.blocks} projectId={id} navigate={navigate} />
                             </div>
 
                             {/* Details Grid */}

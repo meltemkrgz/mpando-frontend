@@ -369,12 +369,14 @@ export default function AppleStyleSidebar({
     <>
       {isMobileMenuOpen && (
         <div
+        <div
           className="fixed inset-0 bg-slate-900/20 backdrop-blur-sm z-45 md:hidden transition-opacity duration-300"
           onClick={closeMobileMenu}
         />
       )}
 
       {/* Sidebar Component */}
+      <aside
       <aside
         className={`fixed inset-y-0 left-0 z-50 flex flex-col ${sidebarWidthClass}
           bg-white/70 backdrop-blur-xl border-r border-slate-200/60 shadow-[4px_0_24px_-12px_rgba(0,0,0,0.1)]
@@ -404,11 +406,14 @@ export default function AppleStyleSidebar({
           </div>
 
           <button
+
+          <button
             className="md:hidden p-1 text-slate-400 hover:text-slate-800 transition-colors"
             onClick={closeMobileMenu}
           >
             {icons.Close}
           </button>
+
 
           {!isSidebarCollapsed && (
             <button
@@ -433,6 +438,8 @@ export default function AppleStyleSidebar({
 
           {isSidebarCollapsed && (
             <button
+          {isSidebarCollapsed && (
+            <button
               className="hidden md:flex absolute -right-3 top-6 w-6 h-6 bg-white border border-slate-200 rounded-full items-center justify-center text-slate-500 shadow-sm hover:text-slate-900 hover:scale-110 transition-all"
               onClick={toggleDesktopCollapse}
             >
@@ -451,16 +458,21 @@ export default function AppleStyleSidebar({
               </svg>
             </button>
           )}
+          )}
         </div>
 
         {/* Search & Project Selector (Hidden if collapsed) */}
         {!isSidebarCollapsed && (
           <div className="px-5 pb-6 space-y-3">
             {/* Search Bar - macOS Style */}
+            {/* Search Bar - macOS Style */}
             <div className="relative group">
               <div className="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none text-slate-400 group-focus-within:text-slate-600">
                 {icons.Search}
               </div>
+              <input
+                type="text"
+                placeholder="Ara..."
               <input
                 type="text"
                 placeholder="Ara..."

@@ -5,6 +5,7 @@ import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import Projects from "./pages/Projects";
 import ProjectDetails from "./pages/ProjectDetails";
+import BlockDetails from "./pages/BlockDetails";
 import Customers from "./pages/Customers";
 import Sales from "./pages/Sales";
 import SecondHandListings from "./pages/SecondHandListings";
@@ -38,6 +39,15 @@ function App() {
           element={
             <PrivateRoute>
               <ProjectDetails />
+            </PrivateRoute>
+          }
+        />
+
+        <Route
+          path="/projects/:projectId/blocks/:blockId"
+          element={
+            <PrivateRoute>
+              <BlockDetails />
             </PrivateRoute>
           }
         />

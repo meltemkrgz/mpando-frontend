@@ -1,10 +1,10 @@
 import React, { useState, useRef, useEffect } from 'react';
 import Sidebar from '../components/Sidebar';
 import Navbar from '../components/Navbar';
-import SaleEditModal from '../modals/SaleEditModal'; 
-import NewSaleModal from '../modals/NewSaleModal'; 
+import SaleEditModal from '../modals/SaleEditModal';
+import NewSaleModal from '../modals/NewSaleModal';
 import { useAuth } from '../context/AuthContext';
-// import { api } from '../api/client'; // Eğer API kullanacaksanız yorum satırını kaldırın
+import { api } from '../api/client';
 import {
   Plus,
   Trash2,
@@ -17,7 +17,9 @@ import {
   XCircle,
   Phone,
   Building2,
-  Banknote
+  Banknote,
+  FileText,
+  ExternalLink
 } from 'lucide-react';
 
 // --- Satış Durumu Renk ve İkonları ---
@@ -25,6 +27,7 @@ const getStatusClasses = (status) => {
   switch (status) {
     case 'Satıldı': return 'bg-green-50 text-green-700 border-green-200 text-[10px] font-bold px-2 py-1';
     case 'Beklemede': return 'bg-yellow-50 text-yellow-700 border-yellow-200 text-[10px] font-bold px-2 py-1';
+    case 'İptal':
     case 'Reddedildi': return 'bg-red-50 text-red-700 border-red-200 text-[10px] font-bold px-2 py-1';
     default: return 'bg-slate-50 text-slate-700 border-slate-200 text-[10px] font-bold px-2 py-1';
   }
@@ -34,6 +37,7 @@ const getStatusIcon = (status) => {
   switch (status) {
     case 'Satıldı': return <CheckCircle2 size={14} />;
     case 'Beklemede': return <Clock size={14} />;
+    case 'İptal':
     case 'Reddedildi': return <XCircle size={14} />;
     default: return null;
   }
@@ -41,63 +45,65 @@ const getStatusIcon = (status) => {
 
 // --- Örnek Veriler ---
 const initialSalesList = [
-  { 
-    id: 1, 
-    customerName: 'Ahmet Yılmaz', 
-    customerPhone: '+90 532 123 45 67', 
-    projectName: 'AKSU Rezidans', 
-    block: 'A', 
-    flat: '12', 
-    status: 'Satıldı', 
-    budgetRange: '3.000.000₺ - 4.500.000₺', 
-    notes: 'Peşinat ödendi, kredi süreci tamamlandı.', 
-    offerAmount: '4.200.000₺', 
-    saleDate: '15.03.2024', 
-    contractNo: 'S-2024-001', 
-    createdAt: '01.03.2024' 
+  {
+    id: 1,
+    customerName: 'Ahmet Yılmaz',
+    customerPhone: '+90 532 123 45 67',
+    projectName: 'AKSU Rezidans',
+    block: 'A',
+    flat: '12',
+    status: 'Satıldı',
+    budgetRange: '3.000.000₺ - 4.500.000₺',
+    notes: 'Peşinat ödendi, kredi süreci tamamlandı.',
+    offerAmount: '4.200.000₺',
+    saleDate: '15.03.2024',
+    contractNo: 'S-2024-001',
+    createdAt: '01.03.2024'
   },
-  { 
-    id: 2, 
-    customerName: 'Ayşe Demir', 
-    customerPhone: '+90 555 987 65 43', 
-    projectName: 'Dolunay Yaşam Merkezi', 
-    block: 'B', 
-    flat: '8', 
-    status: 'Beklemede', 
-    budgetRange: '5.000.000₺ - 6.000.000₺', 
-    notes: 'Eşinin kararını bekliyor, haftaya dönüş yapacak.', 
-    offerAmount: '5.800.000₺', 
-    saleDate: '-', 
-    contractNo: '-', 
-    createdAt: '10.04.2024' 
+  {
+    id: 2,
+    customerName: 'Ayşe Demir',
+    customerPhone: '+90 555 987 65 43',
+    projectName: 'Dolunay Yaşam Merkezi',
+    block: 'B',
+    flat: '8',
+    status: 'Beklemede',
+    budgetRange: '5.000.000₺ - 6.000.000₺',
+    notes: 'Eşinin kararını bekliyor, haftaya dönüş yapacak.',
+    offerAmount: '5.800.000₺',
+    saleDate: '-',
+    contractNo: '-',
+    createdAt: '10.04.2024'
   },
-  { 
-    id: 3, 
-    customerName: 'Mehmet Kaya', 
-    customerPhone: '+90 530 456 78 90', 
-    projectName: 'İŞHAN Rezidans', 
-    block: 'C', 
-    flat: '22', 
-    status: 'Reddedildi', 
-    budgetRange: '2.000.000₺ - 2.500.000₺', 
-    notes: 'Bütçeyi aştığı için vazgeçti.', 
-    offerAmount: '3.100.000₺', 
-    saleDate: '-', 
-    contractNo: '-', 
-    createdAt: '05.02.2024' 
+  {
+    id: 3,
+    customerName: 'Mehmet Kaya',
+    customerPhone: '+90 530 456 78 90',
+    projectName: 'İŞHAN Rezidans',
+    block: 'C',
+    flat: '22',
+    status: 'Reddedildi',
+    budgetRange: '2.000.000₺ - 2.500.000₺',
+    notes: 'Bütçeyi aştığı için vazgeçti.',
+    offerAmount: '3.100.000₺',
+    saleDate: '-',
+    contractNo: '-',
+    createdAt: '05.02.2024'
   },
 ];
 
-const initialNewSaleData = { 
-  customerName: '', customerPhone: '', projectName: '', block: '', flat: '', 
-  status: 'Beklemede', budgetRange: '', notes: '', offerAmount: '', saleDate: '', contractNo: '' 
+const initialNewSaleData = {
+  proje_id: '', musteri_id: '', interested_product: '',
+  sale_status: 'Beklemede', budget_range: '', notes: '', offered_price: '', sale_date: '', contract_no: '', contract_url: '',
+  source: 'Seçiniz', current_meeting_status: 'Yeni', discount_requested: 'Hayır', discount_amount: 0, approval_status: 'Beklemede'
 };
 
 // İsteğe bağlı (açılır/kapanır) sütunlar
 const optionalColumns = [
-  { key: 'offerAmount', label: 'Verilen Teklif' },
-  { key: 'saleDate', label: 'Satış Tarihi' },
-  { key: 'contractNo', label: 'Sözleşme No' },
+  { key: 'offered_price', label: 'Verilen Teklif' },
+  { key: 'sale_date', label: 'Satış Tarihi (Sisteme Giriş)' },
+  { key: 'contract_no', label: 'Sözleşme No' },
+  { key: 'contract_url', label: 'Sözleşme Dosyası' },
   { key: 'createdAt', label: 'Oluşturma Tarihi' },
 ];
 
@@ -112,7 +118,10 @@ function SectionHeader({ title, action }) {
 
 function Sales() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [sales, setSales] = useState(initialSalesList); 
+  const [sales, setSales] = useState([]);
+  const [customers, setCustomers] = useState([]);
+  const [projects, setProjects] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [selectedSales, setSelectedSales] = useState([]);
   const { user } = useAuth();
 
@@ -124,14 +133,14 @@ function Sales() {
   const [editFormData, setEditFormData] = useState(null);
 
   const [isColumnDropdownOpen, setIsColumnDropdownOpen] = useState(false);
-  const [visibleColumns, setVisibleColumns] = useState([]);
+  const [visibleColumns, setVisibleColumns] = useState(['contract_no']);
   const columnDropdownRef = useRef(null);
 
   const [isFilterDropdownOpen, setIsFilterDropdownOpen] = useState(false);
   const [selectedStatusFilter, setSelectedStatusFilter] = useState('Hepsi');
   const filterDropdownRef = useRef(null);
 
-  const allStatusOptions = ['Hepsi', 'Satıldı', 'Beklemede', 'Reddedildi'];
+  const allStatusOptions = ['Hepsi', 'Satıldı', 'Beklemede', 'İptal', 'Reddedildi'];
 
   useEffect(() => {
     function handleClickOutside(event) {
@@ -145,6 +154,30 @@ function Sales() {
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
+
+  const fetchSales = async () => {
+    try {
+      setLoading(true);
+      const [salesData, customersData, projectsData] = await Promise.all([
+        api.get('/sales'),
+        api.get('/customers').catch(() => []), // Fallback in case of error
+        api.get('/projects').catch(() => [])
+      ]);
+      setSales(Array.isArray(salesData) ? salesData : []);
+      setCustomers(Array.isArray(customersData) ? customersData : []);
+      setProjects(Array.isArray(projectsData) ? projectsData : []);
+    } catch (err) {
+      console.error('Veriler yüklenirken hata oluştu:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (user) {
+      fetchSales();
+    }
+  }, [user]);
 
   const toggleMobileMenu = () => setIsMobileMenuOpen(prev => !prev);
 
@@ -161,10 +194,16 @@ function Sales() {
     }
   };
 
-  const handleDeleteSelected = () => {
+  const handleDeleteSelected = async () => {
     if (window.confirm(`${selectedSales.length} satış kaydını silmek istediğinize emin misiniz?`)) {
-      setSales(prev => prev.filter(s => !selectedSales.includes(s.id)));
-      setSelectedSales([]);
+      try {
+        await Promise.all(selectedSales.map(id => api.delete(`/sales/${id}`)));
+        setSales(prev => prev.filter(s => !selectedSales.includes(s.id)));
+        setSelectedSales([]);
+      } catch (err) {
+        console.error('Silme işleminde hata oluştu:', err);
+        alert('Bazı kayıtlar silinemedi.');
+      }
     }
   };
 
@@ -181,32 +220,43 @@ function Sales() {
     setNewSaleData(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleAddNewSale = () => {
-    if (!newSaleData.customerName || !newSaleData.projectName) { 
-      alert('Müşteri Adı ve Proje alanları zorunludur.'); return; 
+  const handleAddNewSale = async () => {
+    if (!newSaleData.musteri_id || !newSaleData.proje_id) {
+      alert('Müşteri ve Proje alanları zorunludur.'); return;
     }
-    const newSale = {
-      id: Date.now(),
-      ...newSaleData,
-      createdAt: new Date().toLocaleDateString('tr-TR'),
-    };
-    setSales([newSale, ...sales]);
-    closeAddModal();
+    try {
+      const addedSale = await api.post('/sales', newSaleData);
+      if (addedSale) {
+        setSales([addedSale, ...sales]);
+        closeAddModal();
+        fetchSales(); // Refresh list to get relationships right
+      }
+    } catch (err) {
+      console.error('Yeni satış eklenirken hata:', err);
+      alert('Satış eklenemedi.');
+    }
   };
 
   // Düzenleme Modal İşlemleri
   const openEditModal = (sale) => { setSelectedSaleForEdit(sale); setEditFormData({ ...sale }); setIsEditModalOpen(true); };
   const closeEditModal = () => { setIsEditModalOpen(false); setTimeout(() => { setSelectedSaleForEdit(null); setEditFormData(null); }, 300); };
-  
-  const handleEditFormChange = (e) => { 
-    const { name, value } = e.target; 
-    setEditFormData(prev => ({ ...prev, [name]: value })); 
+
+  const handleEditFormChange = (e) => {
+    const { name, value } = e.target;
+    setEditFormData(prev => ({ ...prev, [name]: value }));
   };
-  
-  const handleUpdateSale = () => {
-    if (!editFormData.customerName) { alert('Müşteri Adı boş bırakılamaz.'); return; }
-    setSales(prev => prev.map(s => s.id === selectedSaleForEdit.id ? { ...s, ...editFormData } : s));
-    closeEditModal();
+
+  const handleUpdateSale = async () => {
+    if (!editFormData.musteri_id && !editFormData.id) { alert('Hatalı veri gönderimi.'); return; }
+    try {
+      await api.put(`/sales/${selectedSaleForEdit.id}`, editFormData);
+      setSales(prev => prev.map(s => s.id === selectedSaleForEdit.id ? { ...s, ...editFormData } : s));
+      closeEditModal();
+      fetchSales(); // Refresh list
+    } catch (err) {
+      console.error('Güncelleme sırasında hata:', err);
+      alert('Güncellenemedi.');
+    }
   };
 
   const toggleFilterDropdown = () => setIsFilterDropdownOpen(prev => !prev);
@@ -218,7 +268,17 @@ function Sales() {
 
   const filteredSales = selectedStatusFilter === 'Hepsi'
     ? sales
-    : sales.filter(sale => sale.status === selectedStatusFilter);
+    : sales.filter(sale => sale.sale_status === selectedStatusFilter);
+
+  const formatCurrency = (amount) => {
+    if (amount === null || amount === undefined || amount === '') return '-';
+    return new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY' }).format(amount);
+  };
+
+  const formatDate = (dateStr) => {
+    if (!dateStr) return '-';
+    return new Date(dateStr).toLocaleDateString('tr-TR');
+  }
 
   return (
     <div className="flex min-h-screen bg-[#F5F5F7] font-sans text-slate-800">
@@ -277,11 +337,11 @@ function Sales() {
                         <p className="text-xs font-semibold text-slate-400 px-2 pt-1 pb-2">Gösterilecek Sütunlar</p>
                         {optionalColumns.map(col => (
                           <label key={col.key} className="flex items-center gap-2 px-2 py-1.5 rounded-md hover:bg-slate-50 cursor-pointer">
-                            <input 
-                              type="checkbox" 
-                              checked={visibleColumns.includes(col.key)} 
-                              onChange={() => toggleColumnVisibility(col.key)} 
-                              className="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer accent-blue-600" 
+                            <input
+                              type="checkbox"
+                              checked={visibleColumns.includes(col.key)}
+                              onChange={() => toggleColumnVisibility(col.key)}
+                              className="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer accent-blue-600"
                             />
                             <span className="text-sm text-slate-700">{col.label}</span>
                           </label>
@@ -330,9 +390,9 @@ function Sales() {
                     <th className="pb-3 px-4">Durum</th>
                     <th className="pb-3 px-4">Bütçe Aralığı</th>
                     <th className="pb-3 px-4">Notlar</th>
-                    {visibleColumns.includes('offerAmount') && <th className="pb-3 px-4">Verilen Teklif</th>}
-                    {visibleColumns.includes('saleDate') && <th className="pb-3 px-4">Satış Tarihi</th>}
-                    {visibleColumns.includes('contractNo') && <th className="pb-3 px-4">Sözleşme No</th>}
+                    {visibleColumns.includes('offered_price') && <th className="pb-3 px-4">Verilen Teklif</th>}
+                    {visibleColumns.includes('sale_date') && <th className="pb-3 px-4">Satış Tarihi</th>}
+                    {visibleColumns.includes('contract_no') && <th className="pb-3 px-4">Sözleşme No</th>}
                     {visibleColumns.includes('createdAt') && <th className="pb-3 px-4">Oluşturma Tarihi</th>}
                     <th className="pb-3 px-4 text-center">İşlemler</th>
                   </tr>
@@ -348,47 +408,47 @@ function Sales() {
                     filteredSales.map(sale => (
                       <tr key={sale.id} className={`group transition-colors border-b border-slate-50 last:border-none ${selectedSales.includes(sale.id) ? 'bg-blue-50/50' : 'hover:bg-slate-50'}`}>
                         <td className="py-4 pl-2 align-top pt-5">
-                          <input 
-                            type="checkbox" 
-                            checked={selectedSales.includes(sale.id)} 
-                            onChange={() => handleSelectSale(sale.id)} 
-                            className="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer accent-blue-600" 
+                          <input
+                            type="checkbox"
+                            checked={selectedSales.includes(sale.id)}
+                            onChange={() => handleSelectSale(sale.id)}
+                            className="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer accent-blue-600"
                           />
                         </td>
-                        
+
                         {/* Müşteri Bilgileri */}
                         <td className="py-4 px-4 align-top">
                           <div className="flex flex-col gap-1">
-                            <span className="font-semibold text-slate-700">{sale.customerName}</span>
+                            <span className="font-semibold text-slate-700">{sale.customers?.full_name || '-'}</span>
                             <span className="flex items-center gap-1 text-xs text-slate-500">
-                              <Phone size={12} /> {sale.customerPhone}
+                              <Phone size={12} /> {sale.customers?.phone || '-'}
                             </span>
                           </div>
                         </td>
 
-                        {/* Daire Bilgileri */}
+                        {/* İlgili Daire Bilgileri */}
                         <td className="py-4 px-4 align-top">
                           <div className="flex flex-col gap-1">
                             <span className="font-medium text-slate-700 flex items-center gap-1.5">
-                              <Building2 size={14} className="text-blue-500" /> {sale.projectName}
+                              <Building2 size={14} className="text-blue-500" /> {sale.projects?.name || '-'}
                             </span>
                             <span className="text-xs text-slate-500 bg-slate-100 px-2 py-0.5 rounded-md inline-block w-max">
-                              Blok: <strong className="text-slate-700">{sale.block}</strong> | Daire: <strong className="text-slate-700">{sale.flat}</strong>
+                              <strong className="text-slate-700">{sale.interested_product || '-'}</strong>
                             </span>
                           </div>
                         </td>
 
                         {/* Satış Durumu */}
                         <td className="py-4 px-4 align-top pt-5">
-                          <span className={`inline-flex items-center gap-1 border rounded-full ${getStatusClasses(sale.status)}`}>
-                            {getStatusIcon(sale.status)} {sale.status}
+                          <span className={`inline-flex items-center gap-1 border rounded-full ${getStatusClasses(sale.sale_status)}`}>
+                            {getStatusIcon(sale.sale_status)} {sale.sale_status || '-'}
                           </span>
                         </td>
 
                         {/* Bütçe Aralığı */}
                         <td className="py-4 px-4 align-top pt-5">
                           <span className="flex items-center gap-1.5 text-slate-600 font-medium bg-slate-50 border border-slate-100 px-2 py-1 rounded-md text-xs w-max">
-                            <Banknote size={14} className="text-emerald-500"/> {sale.budgetRange}
+                            <Banknote size={14} className="text-emerald-500" /> {sale.budget_range || '-'}
                           </span>
                         </td>
 
@@ -398,11 +458,42 @@ function Sales() {
                         </td>
 
                         {/* İsteğe Bağlı Sütunlar */}
-                        {visibleColumns.includes('offerAmount') && <td className="py-4 px-4 align-top pt-5 text-slate-700 font-medium">{sale.offerAmount}</td>}
-                        {visibleColumns.includes('saleDate') && <td className="py-4 px-4 align-top pt-5 text-slate-500">{sale.saleDate}</td>}
-                        {visibleColumns.includes('contractNo') && <td className="py-4 px-4 align-top pt-5 text-slate-500">{sale.contractNo}</td>}
-                        {visibleColumns.includes('createdAt') && <td className="py-4 px-4 align-top pt-5 text-slate-500">{sale.createdAt}</td>}
-                        
+                        {visibleColumns.includes('offered_price') && <td className="py-4 px-4 align-top pt-5 text-slate-700 font-medium">{formatCurrency(sale.offered_price)}</td>}
+                        {visibleColumns.includes('sale_date') && <td className="py-4 px-4 align-top pt-5 text-slate-500">{formatDate(sale.created_at)}</td>}
+                        {visibleColumns.includes('contract_no') && (
+                          <td className="py-4 px-4 align-top pt-5 text-slate-500">
+                            <div className="flex items-center gap-2">
+                              {sale.contract_no || sale.units?.contract_no || '-'}
+                              {(sale.contract_url || sale.units?.contract_url) && (
+                                <a
+                                  href={sale.contract_url || sale.units?.contract_url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-blue-500 hover:text-blue-700 transition-colors"
+                                  title="Sözleşmeyi Görüntüle"
+                                >
+                                  <ExternalLink size={14} />
+                                </a>
+                              )}
+                            </div>
+                          </td>
+                        )}
+                        {visibleColumns.includes('contract_url') && (
+                          <td className="py-4 px-4 align-top pt-5">
+                            {sale.contract_url || sale.units?.contract_url ? (
+                              <a
+                                href={sale.contract_url || sale.units?.contract_url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-blue-50 text-blue-600 text-xs font-medium hover:bg-blue-100 transition-colors"
+                              >
+                                <FileText size={14} /> Dosya
+                              </a>
+                            ) : '-'}
+                          </td>
+                        )}
+                        {visibleColumns.includes('createdAt') && <td className="py-4 px-4 align-top pt-5 text-slate-500">{formatDate(sale.created_at)}</td>}
+
                         {/* İşlemler */}
                         <td className="py-4 px-4 text-center align-top pt-4">
                           <button onClick={() => openEditModal(sale)} className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 text-sm font-medium text-slate-600 bg-white border border-slate-200 hover:text-blue-600 hover:border-blue-200 hover:bg-blue-50 rounded-lg transition-all shadow-sm">
@@ -425,6 +516,8 @@ function Sales() {
           onClose={closeEditModal}
           onChange={handleEditFormChange}
           onSave={handleUpdateSale}
+          customers={customers.filter(c => String(c.company_id) === String(user?.company_id))}
+          projects={projects.filter(p => String(p.contractor_id) === String(user?.company_id))}
         />
 
         <NewSaleModal
@@ -433,6 +526,8 @@ function Sales() {
           onClose={closeAddModal}
           onChange={handleNewSaleChange}
           onAdd={handleAddNewSale}
+          customers={customers.filter(c => String(c.company_id) === String(user?.company_id))}
+          projects={projects.filter(p => String(p.contractor_id) === String(user?.company_id))}
         />
 
       </main>
