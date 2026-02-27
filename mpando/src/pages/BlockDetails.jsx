@@ -52,7 +52,7 @@ function BlockDetails() {
         setIsFloorModalOpen(false);
         setTimeout(() => setSelectedFloor(null), 300);
     };
-    d
+
     useEffect(() => {
         const fetchBlockDetails = async () => {
             setLoading(true);
