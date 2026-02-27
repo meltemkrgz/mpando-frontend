@@ -101,14 +101,14 @@ const icons = {
     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
     </svg>
-   )
+  )
 };
 
 const navigationGroups = [
   {
     title: 'GENEL İŞLEMLER',
     items: [
-      { name: 'Dashboard', icon: icons.Dashboard, isActive: true, href: "/dashboard"},
+      { name: 'Dashboard', icon: icons.Dashboard, href: "/dashboard" },
       { name: 'Projeler', icon: icons.Projects, href: "/projects" },
       { name: 'Müşteriler', icon: icons.Personnel, href: "/customers" },
       { name: 'Satış Kayıtları', icon: icons.Sales, href: "/sales" }
@@ -126,14 +126,14 @@ export default function AppleStyleSidebar({ isMobileMenuOpen, closeMobileMenu })
   return (
     <>
       {isMobileMenuOpen && (
-        <div 
+        <div
           className="fixed inset-0 bg-slate-900/20 backdrop-blur-sm z-45 md:hidden transition-opacity duration-300"
           onClick={closeMobileMenu}
         />
       )}
 
       {/* Sidebar Component */}
-      <aside 
+      <aside
         className={`fixed inset-y-0 left-0 z-50 flex flex-col ${sidebarWidthClass}
           bg-white/70 backdrop-blur-xl border-r border-slate-200/60 shadow-[4px_0_24px_-12px_rgba(0,0,0,0.1)]
           transform transition-all duration-500 cubic-bezier(0.16, 1, 0.3, 1) 
@@ -144,39 +144,39 @@ export default function AppleStyleSidebar({ isMobileMenuOpen, closeMobileMenu })
         <div className={`flex items-center ${isSidebarCollapsed ? 'justify-center' : 'justify-between px-6'} h-16 mb-2`}>
           <div className="flex items-center gap-3">
             <div
-                className={`rounded-xl bg-white text-slate-900 flex items-center justify-center font-bold shadow-lg shadow-slate-900/20 transition-all duration-300 ${isSidebarCollapsed ? 'w-10 h-10 text-lg' : 'w-8 h-8 text-sm'}`}
->
-                <img 
-                    src="/logo.png" 
-                    alt="User" 
-                    className="w-full h-full object-cover"
-                />
+              className={`rounded-xl bg-white text-slate-900 flex items-center justify-center font-bold shadow-lg shadow-slate-900/20 transition-all duration-300 ${isSidebarCollapsed ? 'w-10 h-10 text-lg' : 'w-8 h-8 text-sm'}`}
+            >
+              <img
+                src="/logo.png"
+                alt="User"
+                className="w-full h-full object-cover"
+              />
             </div>
             {!isSidebarCollapsed && (
               <span className="text-slate-900 font-bold text-lg tracking-tight">MPANDO</span>
             )}
           </div>
-          
-          <button 
+
+          <button
             className="md:hidden p-1 text-slate-400 hover:text-slate-800 transition-colors"
             onClick={closeMobileMenu}
           >
             {icons.Close}
           </button>
-          
+
           {!isSidebarCollapsed && (
-          <button 
-            className="hidden md:block p-1.5 text-slate-400 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition-all"
-            onClick={toggleDesktopCollapse}
-          >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M11 19l-7-7 7-7m8 14l-7-7 7-7" />
-            </svg>
-          </button>
+            <button
+              className="hidden md:block p-1.5 text-slate-400 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition-all"
+              onClick={toggleDesktopCollapse}
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M11 19l-7-7 7-7m8 14l-7-7 7-7" />
+              </svg>
+            </button>
           )}
 
-           {isSidebarCollapsed && (
-            <button 
+          {isSidebarCollapsed && (
+            <button
               className="hidden md:flex absolute -right-3 top-6 w-6 h-6 bg-white border border-slate-200 rounded-full items-center justify-center text-slate-500 shadow-sm hover:text-slate-900 hover:scale-110 transition-all"
               onClick={toggleDesktopCollapse}
             >
@@ -184,20 +184,20 @@ export default function AppleStyleSidebar({ isMobileMenuOpen, closeMobileMenu })
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 5l7 7-7 7M5 5l7 7-7 7" />
               </svg>
             </button>
-           )}
+          )}
         </div>
 
         {/* Search & Project Selector (Hidden if collapsed) */}
         {!isSidebarCollapsed && (
           <div className="px-5 pb-6 space-y-3">
-             {/* Search Bar - macOS Style */}
+            {/* Search Bar - macOS Style */}
             <div className="relative group">
               <div className="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none text-slate-400 group-focus-within:text-slate-600">
                 {icons.Search}
               </div>
-              <input 
-                type="text" 
-                placeholder="Ara..." 
+              <input
+                type="text"
+                placeholder="Ara..."
                 className="w-full pl-9 pr-3 py-1.5 bg-slate-100/80 border-transparent focus:bg-white border focus:border-blue-400/50 rounded-lg text-sm text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/10 transition-all duration-200"
               />
             </div>
@@ -222,8 +222,8 @@ export default function AppleStyleSidebar({ isMobileMenuOpen, closeMobileMenu })
                         onClick={closeMobileMenu}
                         className={`
                           group flex items-center gap-3 px-3 py-2 rounded-lg transition-all duration-200 ease-out
-                          ${item.isActive 
-                            ? 'bg-white text-slate-900 shadow-[0_1px_2px_rgba(0,0,0,0.05)] ring-1 ring-slate-200 font-medium' 
+                          ${window.location.pathname === item.href
+                            ? 'bg-white text-slate-900 shadow-[0_1px_2px_rgba(0,0,0,0.05)] ring-1 ring-slate-200 font-medium'
                             : 'text-slate-500 hover:bg-slate-100/80 hover:text-slate-900'
                           } 
                           ${isSidebarCollapsed ? 'justify-center px-0 py-3' : ''}
@@ -232,7 +232,7 @@ export default function AppleStyleSidebar({ isMobileMenuOpen, closeMobileMenu })
                       >
                         <span className={`
                           transition-transform duration-200 group-hover:scale-105
-                          ${item.isActive ? 'text-blue-600' : 'text-slate-400 group-hover:text-slate-600'}
+                          ${window.location.pathname === item.href ? 'text-blue-600' : 'text-slate-400 group-hover:text-slate-600'}
                         `}>
                           {item.icon}
                         </span>
@@ -251,7 +251,7 @@ export default function AppleStyleSidebar({ isMobileMenuOpen, closeMobileMenu })
           <ul className="space-y-1 mb-3">
             <li>
               <a href="#" className={`flex items-center gap-3 px-3 py-2 rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-900 transition-colors ${isSidebarCollapsed ? 'justify-center' : ''}`}>
-                 <span className="group-hover:text-slate-600">{icons.Help}</span>
+                <span className="group-hover:text-slate-600">{icons.Help}</span>
                 {!isSidebarCollapsed && <span className="text-sm">Destek ve Yardım</span>}
               </a>
             </li>

@@ -11,9 +11,9 @@ import {
     Home,
     Maximize,
     AlertCircle,
-    ChevronDown,
-    ChevronUp
+    Eye
 } from 'lucide-react';
+
 
 const getUnitStatusDetails = (status) => {
     switch (String(status).toUpperCase()) {
@@ -40,15 +40,19 @@ function BlockDetails() {
     const [project, setProject] = useState(null);
     const [loading, setLoading] = useState(true);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-    const [expandedFloors, setExpandedFloors] = useState({});
+    const [selectedFloor, setSelectedFloor] = useState(null);
+    const [isFloorModalOpen, setIsFloorModalOpen] = useState(false);
 
-    const toggleFloor = (floorId) => {
-        setExpandedFloors(prev => ({
-            ...prev,
-            [floorId]: !prev[floorId]
-        }));
+    const openFloorModal = (floor) => {
+        setSelectedFloor(floor);
+        setIsFloorModalOpen(true);
     };
 
+    const closeFloorModal = () => {
+        setIsFloorModalOpen(false);
+        setTimeout(() => setSelectedFloor(null), 300);
+    };
+    d
     useEffect(() => {
         const fetchBlockDetails = async () => {
             setLoading(true);
@@ -132,83 +136,28 @@ function BlockDetails() {
                                 </h2>
 
                                 <div className="space-y-8">
-                                    {[...(block.floors || [])].sort((a, b) => a.floor_number - b.floor_number).map(floor => {
-                                        const isExpanded = !!expandedFloors[floor.id];
+                                    {[...(block.floors || [])].sort((a, b) => b.floor_number - a.floor_number).map(floor => {
                                         return (
                                             <div key={floor.id} className="relative pl-6 md:pl-8 before:absolute before:inset-y-0 before:left-0 before:w-1 before:bg-slate-100 before:rounded-full">
                                                 <div
-                                                    className="font-bold text-slate-800 flex items-center justify-between mb-4 sticky top-0 bg-white py-2 z-10 cursor-pointer hover:bg-slate-50 transition-colors rounded-lg pr-4"
-                                                    onClick={() => toggleFloor(floor.id)}
+                                                    className="group font-bold text-slate-800 flex items-center justify-between mb-4 bg-white py-4 px-4 z-10 cursor-pointer hover:bg-blue-50/50 hover:shadow-sm transition-all rounded-2xl border border-transparent hover:border-blue-100"
+                                                    onClick={() => openFloorModal(floor)}
                                                 >
                                                     <div className="flex items-center gap-3">
-                                                        <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center absolute -left-[1.15rem] md:-left-[1.65rem] border-4 border-white shadow-sm">
+                                                        <div className="w-10 h-10 rounded-xl bg-blue-600 text-white flex items-center justify-center absolute -left-[1.25rem] md:-left-[1.75rem] border-4 border-[#F5F5F7] shadow-md group-hover:scale-110 transition-transform">
                                                             {floor.floor_number}
                                                         </div>
-                                                        <span className="text-xs bg-blue-50 text-blue-600 px-2 py-1 rounded font-bold ml-2">
-                                                            {(floor.units || []).length} Daire
-                                                        </span>
+                                                        <div className="ml-4">
+                                                            <h4 className="text-slate-800 font-black text-lg">{floor.floor_number}. Kat</h4>
+                                                            <span className="text-[10px] bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full font-black uppercase tracking-wider">
+                                                                {(floor.units || []).length} Ünite Mevcut
+                                                            </span>
+                                                        </div>
                                                     </div>
-                                                    <div className="text-slate-400">
-                                                        {isExpanded ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+                                                    <div className="flex items-center gap-2 text-blue-600 opacity-0 group-hover:opacity-100 transition-all transform translate-x-2 group-hover:translate-x-0 font-bold text-sm">
+                                                        Detayları Gör <Eye size={18} />
                                                     </div>
                                                 </div>
-
-                                                {isExpanded && (
-                                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pb-4 animate-in fade-in slide-in-from-top-2 duration-200">
-                                                        {[...(floor.units || [])].sort((a, b) => String(a.unit_number).localeCompare(String(b.unit_number), undefined, { numeric: true })).map(unit => {
-                                                            const statusDetails = getUnitStatusDetails(unit.sales_status || 'AVAILABLE');
-                                                            return (
-                                                                <div key={unit.id} className="border border-slate-200 rounded-xl p-4 bg-white shadow-sm hover:shadow-md transition-shadow">
-                                                                    <div className="font-bold text-base text-slate-800 flex items-center justify-between mb-3 pb-3 border-b border-slate-100">
-                                                                        <div className="flex items-center gap-2">
-                                                                            <Home size={18} className="text-orange-500" />
-                                                                            {String(unit.unit_number).trim().match(/^Daire/i) ? unit.unit_number : `Daire ${unit.unit_number}`}
-                                                                        </div>
-                                                                        <div className="flex items-center gap-2">
-                                                                            <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold border ${statusDetails.classes}`}>
-                                                                                {statusDetails.label}
-                                                                            </span>
-                                                                            <span className="text-xs bg-orange-50 text-orange-700 px-2.5 py-1 rounded-full font-bold border border-orange-100">
-                                                                                {unit.unit_type}
-                                                                            </span>
-                                                                        </div>
-                                                                    </div>
-                                                                    <div className="space-y-2">
-                                                                        {(unit.rooms || []).length === 0 ? (
-                                                                            <p className="text-xs text-slate-400 italic text-center py-2">Oda tanımlanmamış</p>
-                                                                        ) : (
-                                                                            (unit.rooms || []).map(room => (
-                                                                                <div key={room.id} className="flex items-center justify-between text-sm text-slate-600 bg-slate-50 rounded-lg px-3 py-2 border border-slate-100">
-                                                                                    <div className="flex items-center gap-2 font-medium">
-                                                                                        <Maximize size={14} className="text-slate-400" />
-                                                                                        {room.name}
-                                                                                    </div>
-                                                                                    <div className="font-bold text-slate-700">
-                                                                                        {room.area_m2} m²
-                                                                                    </div>
-                                                                                </div>
-                                                                            ))
-                                                                        )}
-                                                                        {/* Total Area calculation just for display */}
-                                                                        {(unit.rooms || []).length > 0 && (
-                                                                            <div className="flex justify-between items-center pt-2 mt-2 border-t border-slate-100 text-xs font-bold text-slate-800">
-                                                                                <span>Toplam Alan:</span>
-                                                                                <span className="text-blue-600">
-                                                                                    {(unit.rooms || []).reduce((acc, curr) => acc + (Number(curr.area_m2) || 0), 0)} m²
-                                                                                </span>
-                                                                            </div>
-                                                                        )}
-                                                                    </div>
-                                                                </div>
-                                                            );
-                                                        })}
-                                                        {(floor.units || []).length === 0 && (
-                                                            <div className="col-span-full bg-slate-50 border border-slate-100 border-dashed rounded-xl p-6 text-center text-slate-400 text-sm">
-                                                                Bu kata ait daire bulunmamaktadır.
-                                                            </div>
-                                                        )}
-                                                    </div>
-                                                )}
                                             </div>
                                         )
                                     })}
@@ -222,6 +171,13 @@ function BlockDetails() {
                         </div>
                     )}
                 </div>
+
+                <FloorDetailsModal
+                    isOpen={isFloorModalOpen}
+                    onClose={closeFloorModal}
+                    floor={selectedFloor}
+                    blockName={block?.name}
+                />
             </main>
         </div>
     );
