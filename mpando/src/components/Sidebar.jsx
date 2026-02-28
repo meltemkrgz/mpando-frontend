@@ -1,6 +1,8 @@
 import React, { useState } from "react";
-import { useLocation, Link } from "react-router-dom";
-import SecondHandListings from "../pages/SecondHandListings";
+import { useLocation, Link } from "react-router-dom"; // 'href' React Router'dan bir export değildir.
+
+// SecondHandListings sayfasının importunu kaldırıyoruz çünkü sadece data modelini güncelleyeceğiz.
+// import SecondHandListings from "../pages/SecondHandListings"; 
 
 const icons = {
   Dashboard: (
@@ -309,6 +311,23 @@ const icons = {
       />
     </svg>
   ),
+  // Emlak için genel bir ev ikonu
+  House: (
+    <svg
+      className="w-5 h-5"
+      fill="none"
+      stroke="currentColor"
+      viewBox="0 0 24 24"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={1.5}
+        d="M3 12l9-9 9 9M5 10v10a1 1 0 001 1h3v-6h6v6h3a1 1 0 001-1V10"
+      />
+    </svg>
+  ),
+  // 2. El İlanlar için mevcut ikon (biraz daha spesifik bir ev ve dönüş oku)
   SecondHandListings: (
     <svg
       className="w-5 h-5"
@@ -339,30 +358,62 @@ const navigationGroups = [
   {
     title: "GENEL İŞLEMLER",
     items: [
-      {
-        name: "Dashboard",
-        icon: icons.Dashboard,
-        href: "/dashboard",
-      },
+      { name: "Dashboard", icon: icons.Dashboard, href: "/dashboard" },
       { name: "Projeler", icon: icons.Projects, href: "/projects" },
       { name: "Müşteriler", icon: icons.Personnel, href: "/customers" },
       { name: "Satış Kayıtları", icon: icons.Sales, href: "/sales" },
-      { name: "2. El İlanlar", icon: icons.SecondHandListings, href: "/second-hand-listings" },
+      {
+        name: "Emlak", // Yeni ana başlık
+        icon: icons.House, // Emlak için ikon
+        type: "dropdown", // Bu öğenin bir dropdown olduğunu belirtir
+        children: [
+          {
+            name: "2. El İlanlar",
+            icon: icons.SecondHandListings, // Alt başlık için ikon
+            href: "/second-hand-listings",
+          },
+          // İsterseniz buraya başka emlak ile ilgili alt öğeler ekleyebilirsiniz
+          // { name: "Yeni İlan Ekle", icon: icons.Plus, href: "/second-hand-listings/new" },
+        ],
+      },
     ],
   },
 ];
 
-export default function AppleStyleSidebar({
-  isMobileMenuOpen,
-  closeMobileMenu,
-}) {
+export default function Sidebar({ isMobileMenuOpen, closeMobileMenu }) {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  // Hangi dropdown'ların açık olduğunu tutmak için yeni state
+  const [openDropdowns, setOpenDropdowns] = useState({});
+
   const toggleDesktopCollapse = () =>
     setIsSidebarCollapsed(!isSidebarCollapsed);
   const location = useLocation();
+
   const sidebarWidthClass = isSidebarCollapsed
     ? "w-[280px] md:w-20"
     : "w-[280px] md:w-[280px]";
+
+  // Dropdown'ı açıp kapatan fonksiyon
+  const toggleDropdown = (dropdownName) => {
+    setOpenDropdowns((prev) => ({
+      ...prev,
+      [dropdownName]: !prev[dropdownName],
+    }));
+  };
+
+  // Bir dropdown'ın veya bir Link'in aktif olup olmadığını kontrol eden yardımcı fonksiyon
+  const isActivePath = (href) => location.pathname === href;
+
+  // Bir dropdown ana başlığının aktif olup olmadığını kontrol eder (kendi yolu veya çocuklarından biri aktifse)
+  const isDropdownParentActive = (item) => {
+    if (item.type === "dropdown") {
+      return (
+        openDropdowns[item.name] || // Kendi açıksa
+        item.children.some((child) => isActivePath(child.href)) // Çocuklarından biri aktifse
+      );
+    }
+    return false;
+  };
 
   return (
     <>
@@ -383,11 +434,15 @@ export default function AppleStyleSidebar({
       >
         {/* Header Section */}
         <div
-          className={`flex items-center ${isSidebarCollapsed ? "justify-center" : "justify-between px-6"} h-16 mb-2`}
+          className={`flex items-center ${
+            isSidebarCollapsed ? "justify-center" : "justify-between px-6"
+          } h-16 mb-2`}
         >
           <div className="flex items-center gap-3">
             <div
-              className={`rounded-xl bg-white text-slate-900 flex items-center justify-center font-bold shadow-lg shadow-slate-900/20 transition-all duration-300 ${isSidebarCollapsed ? 'w-10 h-10 text-lg' : 'w-8 h-8 text-sm'}`}
+              className={`rounded-xl bg-white text-slate-900 flex items-center justify-center font-bold shadow-lg shadow-slate-900/20 transition-all duration-300 ${
+                isSidebarCollapsed ? "w-10 h-10 text-lg" : "w-8 h-8 text-sm"
+              }`}
             >
               <img
                 src="/logo.png"
@@ -414,8 +469,18 @@ export default function AppleStyleSidebar({
               className="hidden md:block p-1.5 text-slate-400 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition-all"
               onClick={toggleDesktopCollapse}
             >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M11 19l-7-7 7-7m8 14l-7-7 7-7" />
+              <svg
+                className="w-5 h-5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={1.5}
+                  d="M11 19l-7-7 7-7m8 14l-7-7 7-7"
+                />
               </svg>
             </button>
           )}
@@ -442,10 +507,9 @@ export default function AppleStyleSidebar({
           )}
         </div>
 
-        {/* Search & Project Selector (Hidden if collapsed) */}
+        {/* Search Bar (Hidden if collapsed) */}
         {!isSidebarCollapsed && (
           <div className="px-5 pb-6 space-y-3">
-            {/* Search Bar - macOS Style */}
             <div className="relative group">
               <div className="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none text-slate-400 group-focus-within:text-slate-600">
                 {icons.Search}
@@ -471,32 +535,143 @@ export default function AppleStyleSidebar({
                 )}
                 <ul className="space-y-0.5">
                   {group.items.map((item, itemIdx) => {
-                    const isActive = location.pathname.startsWith(item.href);
-                    return (
-                      <li key={itemIdx}>
-                        <Link
-                          to={item.href}
-                          onClick={closeMobileMenu}
-                          className={`
-                            group flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 ease-out
-                            ${isActive
-                              ? 'bg-blue-600 text-white shadow-md shadow-blue-600/20 font-semibold'
-                              : 'text-slate-500 hover:bg-slate-100 hover:text-slate-900'
-                            } 
-                            ${isSidebarCollapsed ? 'justify-center px-0 py-3' : ''}
-                          `}
-                          title={isSidebarCollapsed ? item.name : undefined}
-                        >
-                          <span className={`
-                            transition-transform duration-200 group-hover:scale-110
-                            ${isActive ? 'text-white' : 'text-slate-400 group-hover:text-slate-600'}
-                          `}>
-                            {item.icon}
-                          </span>
-                          {!isSidebarCollapsed && <span className="text-[13.5px] tracking-wide">{item.name}</span>}
-                        </Link>
-                      </li>
-                    );
+                    // Normal link veya dropdown öğesi için ortak aktif stil
+                    const baseLinkClasses = `
+                        group flex items-center gap-3 px-3 py-2 rounded-lg transition-all duration-200 ease-out
+                        ${isSidebarCollapsed ? "justify-center px-0 py-3" : ""}
+                    `;
+                    const activeLinkClasses =
+                      "bg-white text-slate-900 shadow-[0_1px_2px_rgba(0,0,0,0.05)] ring-1 ring-slate-200 font-medium";
+                    const inactiveLinkClasses =
+                      "text-slate-500 hover:bg-slate-100/80 hover:text-slate-900";
+
+                    // Normal bir Link öğesi
+                    if (item.type !== "dropdown") {
+                      const isActive = isActivePath(item.href);
+                      return (
+                        <li key={itemIdx}>
+                          <Link
+                            to={item.href}
+                            onClick={closeMobileMenu}
+                            className={`${baseLinkClasses} ${
+                              isActive ? activeLinkClasses : inactiveLinkClasses
+                            }`}
+                            title={isSidebarCollapsed ? item.name : undefined}
+                          >
+                            <span
+                              className={`
+                                transition-transform duration-200 group-hover:scale-105
+                                ${
+                                  isActive
+                                    ? "text-blue-600"
+                                    : "text-slate-400 group-hover:text-slate-600"
+                                }
+                              `}
+                            >
+                              {item.icon}
+                            </span>
+                            {!isSidebarCollapsed && (
+                              <span className="text-[13.5px]">{item.name}</span>
+                            )}
+                          </Link>
+                        </li>
+                      );
+                    } else {
+                      // Dropdown öğesi
+                      const isDropdownOpen = openDropdowns[item.name];
+                      const isActive = isDropdownParentActive(item); // Parent aktifse veya çocuk aktifse
+
+                      return (
+                        <li key={itemIdx}>
+                          <button
+                            type="button"
+                            onClick={() => toggleDropdown(item.name)}
+                            className={`${baseLinkClasses} w-full
+                                ${
+                                  isActive
+                                    ? activeLinkClasses
+                                    : inactiveLinkClasses
+                                }
+                            `}
+                            title={isSidebarCollapsed ? item.name : undefined}
+                            aria-expanded={isDropdownOpen}
+                            aria-controls={`dropdown-${item.name}`}
+                          >
+                            <span
+                              className={`
+                                transition-transform duration-200 group-hover:scale-105
+                                ${
+                                  isActive
+                                    ? "text-blue-600"
+                                    : "text-slate-400 group-hover:text-slate-600"
+                                }
+                              `}
+                            >
+                              {item.icon}
+                            </span>
+                            {!isSidebarCollapsed && (
+                              <>
+                                <span className="text-[13.5px] mr-auto text-left">
+                                  {item.name}
+                                </span>
+                                <span
+                                  className={`
+                                    transition-transform duration-200
+                                    ${isDropdownOpen ? "rotate-180" : ""}
+                                  `}
+                                >
+                                  {icons.ChevronDown}
+                                </span>
+                              </>
+                            )}
+                          </button>
+
+                          {/* Dropdown alt öğeleri */}
+                          {isDropdownOpen && !isSidebarCollapsed && (
+                            <ul
+                              id={`dropdown-${item.name}`}
+                              className="ml-5 mt-1 space-y-0.5"
+                            >
+                              {item.children.map((child, childIdx) => {
+                                const isChildActive = isActivePath(child.href);
+                                return (
+                                  <li key={childIdx}>
+                                    <Link
+                                      to={child.href}
+                                      onClick={closeMobileMenu}
+                                      className={`
+                                            group flex items-center gap-3 px-3 py-2 rounded-lg transition-all duration-200 ease-out
+                                            ${
+                                              isChildActive
+                                                ? activeLinkClasses
+                                                : inactiveLinkClasses
+                                            }
+                                        `}
+                                    >
+                                      <span
+                                        className={`
+                                            transition-transform duration-200 group-hover:scale-105
+                                            ${
+                                              isChildActive
+                                                ? "text-blue-600"
+                                                : "text-slate-400 group-hover:text-slate-600"
+                                            }
+                                        `}
+                                      >
+                                        {child.icon}
+                                      </span>
+                                      <span className="text-[13.5px]">
+                                        {child.name}
+                                      </span>
+                                    </Link>
+                                  </li>
+                                );
+                              })}
+                            </ul>
+                          )}
+                        </li>
+                      );
+                    }
                   })}
                 </ul>
               </div>
@@ -508,10 +683,20 @@ export default function AppleStyleSidebar({
         <div className="mt-auto bg-white/40 backdrop-blur-xl border-t border-slate-200/60 p-3">
           <ul className="space-y-1 mb-3">
             <li>
-              <a href="#" className={`flex items-center gap-3 px-3 py-2 rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-900 transition-colors ${isSidebarCollapsed ? 'justify-center' : ''}`}>
-                <span className="group-hover:text-slate-600">{icons.Help}</span>
-                {!isSidebarCollapsed && <span className="text-sm">Destek ve Yardım</span>}
-              </a>
+              <Link
+                to="/help" // Link olarak değiştirildi
+                className={`flex items-center gap-3 px-3 py-2 rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-900 transition-colors ${
+                  isSidebarCollapsed ? "justify-center" : ""
+                }`}
+                onClick={closeMobileMenu}
+              >
+                <span className="group-hover:text-slate-600">
+                  {icons.Help}
+                </span>
+                {!isSidebarCollapsed && (
+                  <span className="text-sm">Destek ve Yardım</span>
+                )}
+              </Link>
             </li>
           </ul>
         </div>

@@ -11,11 +11,12 @@ import {
   FileText
 } from 'lucide-react';
 
-const SecondHandEditModal = ({ isOpen, onClose, data, onSave, agents = [] }) => {
-  const projects = ['Güneş Sitesi 3. Etap', 'Deniz Manzaralı Müstakil', 'Merkez Plaza', 'Diğer'];
-  const blocks = ['A Blok', 'B Blok', 'C Blok', 'Bağımsız', 'Diğer'];
+export default function NewSecondHandModal({ isOpen, onClose, onAdd, agents = [] }) {
+  const defaultProjects = ['Güneş Sitesi 3. Etap', 'Deniz Manzaralı Müstakil', 'Merkez Plaza', 'Diğer'];
+  const defaultBlocks = ['A Blok', 'B Blok', 'C Blok', 'Bağımsız', 'Diğer'];
   const availableAgents = agents.length > 0 ? [...agents, 'Diğer'] : ['Ahmet Yılmaz', 'Zeynep Kaya', 'Mustafa Öztürk', 'Diğer'];
-  const [formData, setFormData] = useState({
+
+  const initialData = {
     projectName: '',
     customProjectName: '',
     blockInfo: '',
@@ -24,59 +25,36 @@ const SecondHandEditModal = ({ isOpen, onClose, data, onSave, agents = [] }) => 
     ownerPhone: '',
     buyerName: '',
     buyerPhone: '',
+    type: '',
+    status: 'Aktif',
+    price: '',
+    deposit: '',
+    commission: '',
+    notes: '',
     agentName: '',
     customAgentName: '',
     contractStartDate: '',
     contractEndDate: '',
-    type: '', 
-    status: '',
-    price: '',
-    deposit: '',
-    commission: '',
-    notes: ''
-  });
+  };
 
+  const [formData, setFormData] = useState(initialData);
+  
   useEffect(() => {
-    if (data) {
-      const isProjectInList = projects.includes(data.projectName);
-      const isBlockInList = blocks.includes(data.block);
-      const isAgentInList = availableAgents.includes(data.agentName);
-      const formattedStartDate = data.contractStartDate ? data.contractStartDate.split('T')[0] : '';
-      const formattedEndDate = data.contractEndDate ? data.contractEndDate.split('T')[0] : '';
-
-      setFormData({
-        projectName: isProjectInList ? data.projectName : 'Diğer',
-        customProjectName: !isProjectInList ? data.projectName || '' : '',
-        blockInfo: isBlockInList ? data.block : 'Diğer',
-        customBlockInfo: !isBlockInList ? data.block || '' : '',
-
-        ownerName: data.ownerName || '',
-        ownerPhone: data.ownerPhone || '',
-        buyerName: data.buyerName || '', 
-        buyerPhone: data.buyerPhone || '',
-        agentName: isAgentInList ? data.agentName : 'Diğer',
-        customAgentName: !isAgentInList ? data.agentName || '' : '',
-        contractStartDate: formattedStartDate,
-        contractEndDate: formattedEndDate,
-        
-        type: data.type || '',
-        status: data.status || 'Aktif',
-        price: data.price || '',
-        deposit: data.deposit || '',
-        commission: data.commission || '',
-        notes: data.notes || ''
-      });
+    if (isOpen) {
+      setFormData(initialData);
     }
-  }, [data, agents, projects, blocks, availableAgents]);
+  }, [isOpen]);
+
+  if (!isOpen) return null;
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    
+
     const finalProjectName = formData.projectName === 'Diğer' ? formData.customProjectName : formData.projectName;
     const finalBlock = formData.blockInfo === 'Diğer' ? formData.customBlockInfo : formData.blockInfo;
     const finalAgentName = formData.agentName === 'Diğer' ? formData.customAgentName : formData.agentName;
@@ -85,30 +63,28 @@ const SecondHandEditModal = ({ isOpen, onClose, data, onSave, agents = [] }) => 
       alert("Lütfen zorunlu (*) alanları doldurunuz.");
       return;
     }
-
-    const updatedData = {
-      ...data,
+    
+    const newListing = {
       projectName: finalProjectName,
       block: finalBlock,
       ownerName: formData.ownerName,
       ownerPhone: formData.ownerPhone,
       buyerName: formData.buyerName,
       buyerPhone: formData.buyerPhone,
-      agentName: finalAgentName,
-      contractStartDate: formData.contractStartDate,
-      contractEndDate: formData.contractEndDate,
       type: formData.type,
       status: formData.status,
       price: formData.price,
       deposit: formData.deposit,
       commission: formData.commission,
-      notes: formData.notes
+      notes: formData.notes,
+      agentName: finalAgentName,
+      contractStartDate: formData.contractStartDate,
+      contractEndDate: formData.contractEndDate,
     };
 
-    onSave(updatedData);
+    onAdd(newListing);
+    onClose();
   };
-
-  if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-in fade-in duration-200">
@@ -116,19 +92,16 @@ const SecondHandEditModal = ({ isOpen, onClose, data, onSave, agents = [] }) => 
         
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-white sticky top-0 z-10">
           <div>
-            <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2">
-              İlan Düzenle 
-              <span className="text-xs font-normal text-slate-500 bg-slate-100 border px-2 py-0.5 rounded-md">#{data?.id}</span>
-            </h2>
-            <p className="text-xs text-slate-500 mt-0.5">Mevcut gayrimenkul bilgilerini güncelleyin.</p>
+            <h2 className="text-lg font-bold text-slate-800">Yeni İlan Ekle</h2>
+            <p className="text-xs text-slate-500 mt-0.5">Portföye yeni bir gayrimenkul ekleyin.</p>
           </div>
-          <button onClick={onClose} className="text-slate-400 hover:text-slate-600 p-2 rounded-full hover:bg-slate-100 transition-colors">
+          <button onClick={onClose} className="p-2 hover:bg-slate-100 rounded-full text-slate-400 hover:text-slate-600 transition-colors">
             <X size={20} />
           </button>
         </div>
 
         <div className="p-6 overflow-y-auto custom-scrollbar">
-          <form id="editForm" onSubmit={handleSubmit} className="space-y-8">
+          <form id="new-listing-form" onSubmit={handleSubmit} className="space-y-8">
             
             <section className="bg-slate-50/50 p-4 rounded-xl border border-slate-200">
               <div className="flex items-center gap-2 mb-4 text-blue-700 font-semibold border-b border-slate-200 pb-2">
@@ -141,7 +114,7 @@ const SecondHandEditModal = ({ isOpen, onClose, data, onSave, agents = [] }) => 
                   <div className="relative">
                     <select name="projectName" value={formData.projectName} onChange={handleChange} className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white appearance-none cursor-pointer" required>
                       <option value="">Seçiniz</option>
-                      {projects.map(p => <option key={p} value={p}>{p}</option>)}
+                      {defaultProjects.map(p => <option key={p} value={p}>{p}</option>)}
                     </select>
                     <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={16} />
                   </div>
@@ -154,7 +127,7 @@ const SecondHandEditModal = ({ isOpen, onClose, data, onSave, agents = [] }) => 
                   <div className="relative">
                     <select name="blockInfo" value={formData.blockInfo} onChange={handleChange} className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white appearance-none cursor-pointer" required>
                       <option value="">Seçiniz</option>
-                      {blocks.map(b => <option key={b} value={b}>{b}</option>)}
+                      {defaultBlocks.map(b => <option key={b} value={b}>{b}</option>)}
                     </select>
                     <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={16} />
                   </div>
@@ -196,16 +169,16 @@ const SecondHandEditModal = ({ isOpen, onClose, data, onSave, agents = [] }) => 
             </section>
 
             <section className="bg-slate-50/50 p-4 rounded-xl border border-slate-200">
-              <div className="flex items-center gap-2 mb-4 text-purple-700 font-semibold border-b border-slate-200 pb-2">
+             <div className="flex items-center gap-2 mb-4 text-purple-700 font-semibold border-b border-slate-200 pb-2">
                 <Users size={18} />
                 <h3>Taraf Bilgileri</h3>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 relative">
-                 <div className="space-y-4">
+                <div className="space-y-4">
                   <h4 className="text-xs font-bold text-purple-600 uppercase tracking-wider">Ev Sahibi</h4>
                   <div className="space-y-1.5">
                     <label className="text-sm font-medium text-slate-700">Ad Soyad <span className="text-red-500">*</span></label>
-                    <input type="text" name="ownerName" value={formData.ownerName} onChange={handleChange} placeholder="Ad Soyad" className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-500 outline-none" required />
+                    <input type="text" name="ownerName" value={formData.ownerName} onChange={handleChange} placeholder="Ad Soyad Giriniz" className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-500 outline-none" required />
                   </div>
                   <div className="space-y-1.5">
                     <label className="text-sm font-medium text-slate-700">Telefon</label>
@@ -224,7 +197,6 @@ const SecondHandEditModal = ({ isOpen, onClose, data, onSave, agents = [] }) => 
                   </div>
                 </div>
               </div>
-              
               <div className="mt-6 border-t border-slate-200 pt-4">
                  <div className="space-y-1.5">
                   <label className="text-sm font-medium text-slate-700 flex items-center gap-2">
@@ -252,11 +224,23 @@ const SecondHandEditModal = ({ isOpen, onClose, data, onSave, agents = [] }) => 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                  <div className="space-y-1.5">
                   <label className="text-sm font-medium text-slate-700">Sözleşme Başlangıç Tarihi</label>
-                  <input type="date" name="contractStartDate" value={formData.contractStartDate} onChange={handleChange} className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-cyan-500 outline-none" />
+                  <input 
+                    type="date" 
+                    name="contractStartDate" 
+                    value={formData.contractStartDate} 
+                    onChange={handleChange}
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-cyan-500 outline-none"
+                  />
                 </div>
                 <div className="space-y-1.5">
                   <label className="text-sm font-medium text-slate-700">Sözleşme Bitiş Tarihi</label>
-                  <input type="date" name="contractEndDate" value={formData.contractEndDate} onChange={handleChange} className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-cyan-500 outline-none" />
+                  <input 
+                    type="date" 
+                    name="contractEndDate" 
+                    value={formData.contractEndDate} 
+                    onChange={handleChange}
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-cyan-500 outline-none"
+                  />
                 </div>
               </div>
             </section>
@@ -297,16 +281,14 @@ const SecondHandEditModal = ({ isOpen, onClose, data, onSave, agents = [] }) => 
 
         <div className="px-6 py-4 border-t border-slate-100 bg-slate-50 flex items-center justify-end gap-3">
           <button type="button" onClick={onClose} className="px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 hover:text-slate-900 transition-colors shadow-sm">
-            Vazgeç
+            İptal
           </button>
-          <button type="submit" form="editForm" className="flex items-center gap-2 px-6 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-sm transition-colors">
+          <button type="submit" form="new-listing-form" className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors shadow-sm">
             <Save size={16} />
-            Güncelle
+            Kaydet
           </button>
         </div>
       </div>
     </div>
   );
-};
-
-export default SecondHandEditModal;
+}

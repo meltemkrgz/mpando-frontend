@@ -1,9 +1,11 @@
 import React, { useState, useRef, useEffect } from 'react';
 import Sidebar from '../components/Sidebar';
 import Navbar from '../components/Navbar';
-import SecondHandEditModal from '../modals/SecondHandEditModal'; 
-import NewSecondHandModal from '../modals/NewSecondHandModal ';
 import { useAuth } from '../context/AuthContext';
+import NewSecondHandModal from '../modals/NewSecondHandModal'; 
+import SecondHandEditModal from '../modals/SecondHandEditModal'; 
+import SecondHandDetailsModal from '../modals/SecondHandDetailsModal';
+
 import {
   Plus,
   Trash2,
@@ -26,8 +28,8 @@ import {
 const getStatusClasses = (status) => {
   switch (status) {
     case 'Aktif': return 'bg-green-50 text-green-700 border-green-200 text-[10px] font-bold px-2 py-1';
-    case 'Opsiyonlu': return 'bg-yellow-50 text-yellow-700 border-yellow-200 text-[10px] font-bold px-2 py-1';
-    case 'Pasif': return 'bg-gray-50 text-gray-700 border-gray-200 text-[10px] font-bold px-2 py-1';
+    case 'Pasif': return 'bg-red-50 text-red-700 border-red-200 text-[10px] font-bold px-2 py-1';
+    case 'Satıldı/Kiralandı': return 'bg-gray-50 text-gray-700 border-gray-200 text-[10px] font-bold px-2 py-1';
     default: return 'bg-slate-50 text-slate-700 border-slate-200 text-[10px] font-bold px-2 py-1';
   }
 };
@@ -35,8 +37,8 @@ const getStatusClasses = (status) => {
 const getStatusIcon = (status) => {
   switch (status) {
     case 'Aktif': return <CheckCircle2 size={14} />;
-    case 'Opsiyonlu': return <Clock size={14} />;
     case 'Pasif': return <XCircle size={14} />;
+    case 'Satıldı/Kiralandı': return <Tag size={14} />;
     default: return null;
   }
 };
@@ -65,7 +67,8 @@ const initialListings = [
     status: 'Aktif', 
     type: 'Daire',
     price: '5.250.000₺',
-    createdAt: '01.03.2024' 
+    createdAt: '01.03.2024',
+    notes: 'Krediye uygun, hemen taşınılabilir.'
   },
   { 
     id: 2, 
@@ -76,10 +79,11 @@ const initialListings = [
     flat: 'No: 12', 
     ownerName: 'Ayşe Kaya', 
     ownerPhone: '+90 555 444 55 66',
-    status: 'Opsiyonlu', 
+    status: 'Pasif', 
     type: 'Villa',
     price: '18.000.000₺',
-    createdAt: '15.02.2024' 
+    createdAt: '15.02.2024',
+    notes: 'Tadilat masrafı fiyattan düşülecek.'
   },
   { 
     id: 3, 
@@ -97,16 +101,9 @@ const initialListings = [
   },
 ];
 
-const initialNewListingData = { 
-  projectName: '', location: '', agentName: '', block: '', flat: '', 
-  ownerName: '', ownerPhone: '', status: 'Aktif', type: 'Daire', price: ''
-};
-
-// İsteğe bağlı sütunlar (Referanstaki yapıya uygun)
 const optionalColumns = [
   { key: 'price', label: 'Fiyat' },
   { key: 'createdAt', label: 'Eklenme Tarihi' },
-  { key: 'location', label: 'Konum Detayı' },
 ];
 
 function SectionHeader({ title, action }) {
@@ -124,24 +121,27 @@ function SecondHandListings() {
   const [selectedListings, setSelectedListings] = useState([]);
   const { user } = useAuth();
 
-  // Modal State'leri
-  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  const [newListingData, setNewListingData] = useState(initialNewListingData);
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  // --- MODAL STATES ---
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false); // 1. New Modal State
+  
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false); // 2. Edit Modal State
   const [selectedListingForEdit, setSelectedListingForEdit] = useState(null);
+
+  const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false); // 3. Details Modal State
+  const [selectedListingForDetails, setSelectedListingForDetails] = useState(null);
+
 
   // Filtre ve Sütun State'leri
   const [isColumnDropdownOpen, setIsColumnDropdownOpen] = useState(false);
-  const [visibleColumns, setVisibleColumns] = useState(['price']); // Varsayılan açık opsiyonel sütun
+  const [visibleColumns, setVisibleColumns] = useState(['price']);
   const columnDropdownRef = useRef(null);
 
   const [isFilterDropdownOpen, setIsFilterDropdownOpen] = useState(false);
   const [selectedStatusFilter, setSelectedStatusFilter] = useState('Hepsi');
   const filterDropdownRef = useRef(null);
 
-  const allStatusOptions = ['Hepsi', 'Aktif', 'Opsiyonlu', 'Pasif'];
+  const allStatusOptions = ['Hepsi', 'Aktif', 'Pasif', 'Satıldı/Kiralandı'];
 
-  // Dışarı tıklama kontrolü (Dropdownlar için)
   useEffect(() => {
     function handleClickOutside(event) {
       if (columnDropdownRef.current && !columnDropdownRef.current.contains(event.target)) {
@@ -157,28 +157,33 @@ function SecondHandListings() {
 
   const toggleMobileMenu = () => setIsMobileMenuOpen(prev => !prev);
 
+  // --- Ekleme Fonksiyonu ---
   const handleAddListing = (formData) => {
     const newListing = {
-      id: Date.now(), // Benzersiz ID
+      id: Date.now(),
       createdAt: new Date().toLocaleDateString('tr-TR'),
       ...formData
     };
-
-    setListings([newListing, ...listings]); // Listeye ekle
-    setIsAddModalOpen(false); // Modalı kapat
+    setListings([newListing, ...listings]);
+    setIsAddModalOpen(false);
   };
 
+  // --- Güncelleme Fonksiyonu ---
   const handleUpdateListing = (updatedData) => {
-  setListings((prevListings) =>
-    prevListings.map((item) =>
-      item.id === updatedData.id ? { ...item, ...updatedData } : item
-    )
-  );
-  setIsEditModalOpen(false); // Modalı kapat
-  setSelectedListingForEdit(null); // Seçili veriyi temizle
+    setListings((prevListings) =>
+      prevListings.map((item) =>
+        item.id === updatedData.id ? { ...item, ...updatedData } : item
+      )
+    );
+    setIsEditModalOpen(false);
+    setSelectedListingForEdit(null);
+    
+    // Eğer detay modalı açıksa, oradaki veriyi de anlık güncelle
+    if(selectedListingForDetails && selectedListingForDetails.id === updatedData.id) {
+       setSelectedListingForDetails(updatedData);
+    }
   };
 
-  // Seçim İşlemleri
   const handleSelectListing = (id) => {
     setSelectedListings(prev => prev.includes(id) ? prev.filter(s => s !== id) : [...prev, id]);
   };
@@ -203,7 +208,6 @@ function SecondHandListings() {
     setVisibleColumns(prev => prev.includes(key) ? prev.filter(k => k !== key) : [...prev, key]);
   };
 
-  // Filtreleme
   const toggleFilterDropdown = () => setIsFilterDropdownOpen(prev => !prev);
   const handleFilterChange = (status) => {
     setSelectedStatusFilter(status);
@@ -215,9 +219,18 @@ function SecondHandListings() {
     ? listings
     : listings.filter(listing => listing.status === selectedStatusFilter);
 
-  // Modal Açma/Kapama (Mock Fonksiyonlar)
+  // --- Modal Açma Yardımcıları ---
   const openAddModal = () => setIsAddModalOpen(true);
-  const openEditModal = (listing) => { setSelectedListingForEdit(listing); setIsEditModalOpen(true); };
+  
+  const openEditModal = (listing) => { 
+    setSelectedListingForEdit(listing); 
+    setIsEditModalOpen(true); 
+  };
+
+  const openDetailsModal = (listing) => {
+    setSelectedListingForDetails(listing);
+    setIsDetailsModalOpen(true);
+  };
 
   return (
     <div className="flex min-h-screen bg-[#F5F5F7] font-sans text-slate-800">
@@ -331,7 +344,6 @@ function SecondHandListings() {
                     <th className="pb-3 px-4">Durum</th>
                     <th className="pb-3 px-4">Tip</th>
                     {visibleColumns.includes('price') && <th className="pb-3 px-4">Fiyat</th>}
-                    {visibleColumns.includes('location') && <th className="pb-3 px-4">Konum</th>}
                     {visibleColumns.includes('createdAt') && <th className="pb-3 px-4">Eklenme Tarihi</th>}
                     <th className="pb-3 px-4 text-center">İşlemler</th>
                   </tr>
@@ -345,9 +357,13 @@ function SecondHandListings() {
                     </tr>
                   ) : (
                     filteredListings.map(item => (
-                      <tr key={item.id} className={`group transition-colors border-b border-slate-50 last:border-none ${selectedListings.includes(item.id) ? 'bg-blue-50/50' : 'hover:bg-slate-50'}`}>
-                        {/* Checkbox */}
-                        <td className="py-4 pl-2 align-top pt-5">
+                      <tr 
+                        key={item.id} 
+                        // --- SATIRA TIKLANINCA DETAY MODALI AÇILIR ---
+                        onClick={() => openDetailsModal(item)}
+                        className={`group transition-colors border-b border-slate-50 last:border-none cursor-pointer ${selectedListings.includes(item.id) ? 'bg-blue-50/50' : 'hover:bg-slate-50'}`}
+                      >
+                        <td className="py-4 pl-2 align-top pt-5" onClick={(e) => e.stopPropagation()}>
                           <input 
                             type="checkbox" 
                             checked={selectedListings.includes(item.id)} 
@@ -356,31 +372,27 @@ function SecondHandListings() {
                           />
                         </td>
                         
-                        {/* Proje Bilgisi */}
                         <td className="py-4 px-4 align-top">
                           <div className="flex flex-col gap-1">
-                            <span className="font-semibold text-slate-700">{item.projectName}</span>
+                            <span className="font-semibold text-slate-700 group-hover:text-blue-600 transition-colors">{item.projectName}</span>
                             <span className="text-xs text-slate-400 flex items-center gap-1">
                                İlan No: #{1000 + item.id}
                             </span>
                           </div>
                         </td>
 
-                        {/* Ekleyen (Agent) */}
                         <td className="py-4 px-4 align-top pt-5">
                             <span className="flex items-center gap-1.5 text-slate-700">
                               <User size={14} className="text-slate-400"/> {item.agentName}
                             </span>
                         </td>
 
-                        {/* Blok / Bölüm */}
                         <td className="py-4 px-4 align-top pt-5">
                           <span className="text-sm text-slate-600 bg-slate-100 px-2 py-1 rounded-md inline-block w-max border border-slate-200">
                              {item.block} / {item.flat}
                           </span>
                         </td>
 
-                        {/* Ev Sahibi */}
                         <td className="py-4 px-4 align-top">
                           <div className="flex flex-col gap-1">
                             <span className="text-slate-700 font-medium">{item.ownerName}</span>
@@ -390,21 +402,18 @@ function SecondHandListings() {
                           </div>
                         </td>
 
-                        {/* Durum */}
                         <td className="py-4 px-4 align-top pt-5">
                           <span className={`inline-flex items-center gap-1 border rounded-full ${getStatusClasses(item.status)}`}>
                             {getStatusIcon(item.status)} {item.status}
                           </span>
                         </td>
 
-                        {/* Tip */}
                         <td className="py-4 px-4 align-top pt-5">
                           <span className="flex items-center gap-1.5 text-slate-600 font-medium">
                             {getTypeIcon(item.type)} {item.type}
                           </span>
                         </td>
 
-                        {/* İsteğe Bağlı Sütunlar */}
                         {visibleColumns.includes('price') && (
                             <td className="py-4 px-4 align-top pt-5 font-bold text-slate-700">
                                 {item.price}
@@ -421,8 +430,8 @@ function SecondHandListings() {
                             </td>
                         )}
                         
-                        {/* İşlemler */}
-                        <td className="py-4 px-4 text-center align-top pt-4">
+                        {/* İşlemler Butonu - Edit Modalını Açar */}
+                        <td className="py-4 px-4 text-center align-top pt-4" onClick={(e) => e.stopPropagation()}>
                           <button onClick={() => openEditModal(item)} className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 text-sm font-medium text-slate-600 bg-white border border-slate-200 hover:text-blue-600 hover:border-blue-200 hover:bg-blue-50 rounded-lg transition-all shadow-sm">
                             <Pencil size={14} /> Düzenle
                           </button>
@@ -436,18 +445,33 @@ function SecondHandListings() {
           </div>
         </div>
 
-        {/* --- MODALLAR --- */}
+        {/* --- 1. NEW MODAL --- */}
+        <NewSecondHandModal
+          isOpen={isAddModalOpen}
+          onClose={() => setIsAddModalOpen(false)}
+          onAdd={handleAddListing}
+        />
+
+        {/* --- 2. EDIT MODAL --- */}
         <SecondHandEditModal
           isOpen={isEditModalOpen}
           data={selectedListingForEdit}
           onClose={() => setIsEditModalOpen(false)}
           onSave={handleUpdateListing}
         />
-        <NewSecondHandModal
-          isOpen={isAddModalOpen}
-          onClose={() => setIsAddModalOpen(false)}
-          onAdd={handleAddListing}
+
+        {/* --- 3. DETAILS MODAL (YENİ) --- */}
+        <SecondHandDetailsModal
+          isOpen={isDetailsModalOpen}
+          data={selectedListingForDetails}
+          onClose={() => setIsDetailsModalOpen(false)}
+          onEdit={(listing) => {
+             // Detayı kapat, Düzenleyi aç
+             setIsDetailsModalOpen(false);
+             openEditModal(listing);
+          }}
         />
+
       </main>
     </div>
   );
