@@ -15,7 +15,11 @@ import {
     ChevronUp,
     MoreVertical,
     Edit2,
-    Trash2
+    Trash2,
+    Filter,
+    Search,
+    X,
+    LayoutGrid
 } from 'lucide-react';
 
 const getUnitStatusDetails = (status) => {
@@ -46,6 +50,8 @@ function BlockDetails() {
     const [expandedFloors, setExpandedFloors] = useState({});
     const [expandedUnits, setExpandedUnits] = useState({});
     const [activeFloorMenu, setActiveFloorMenu] = useState(null);
+    const [statusFilter, setStatusFilter] = useState('ALL');
+    const [typeFilter, setTypeFilter] = useState('ALL');
 
     // Dropdown dışında bir yere tıklandığında menüyü kapat
     useEffect(() => {
@@ -91,6 +97,42 @@ function BlockDetails() {
             fetchBlockDetails();
         }
     }, [projectId, blockId, user]);
+
+    // Benzersiz ünite tiplerini al
+    const unitTypes = React.useMemo(() => {
+        if (!block?.floors) return [];
+        const types = new Set();
+        (block.floors || []).forEach(floor => {
+            (floor.units || []).forEach(unit => {
+                if (unit.unit_type) types.add(unit.unit_type);
+            });
+        });
+        return Array.from(types).sort();
+    }, [block]);
+
+    // Filtrelenmiş katlar ve üniteler
+    const filteredFloors = React.useMemo(() => {
+        if (!block?.floors) return [];
+
+        return block.floors
+            .map(floor => ({
+                ...floor,
+                units: (floor.units || []).filter(unit => {
+                    const status = String(unit.sales_status || 'AVAILABLE').toUpperCase();
+
+                    const matchesStatus = statusFilter === 'ALL' ||
+                        (statusFilter === 'SOLD' && (status === 'SOLD' || status === 'SATILDI')) ||
+                        (statusFilter === 'AVAILABLE' && (status === 'AVAILABLE' || status === 'SATILIK' || status === 'MÜSAİT')) ||
+                        (statusFilter === 'RESERVED' && (status === 'RESERVED' || status === 'REZERVE'));
+
+                    const matchesType = typeFilter === 'ALL' || unit.unit_type === typeFilter;
+
+                    return matchesStatus && matchesType;
+                })
+            }))
+            .filter(floor => floor.units.length > 0)
+            .sort((a, b) => a.floor_number - b.floor_number);
+    }, [block, statusFilter, typeFilter]);
 
     const toggleMobileMenu = () => setIsMobileMenuOpen(prev => !prev);
     const closeMobileMenu = () => setIsMobileMenuOpen(false);
@@ -145,13 +187,59 @@ function BlockDetails() {
 
                             {/* Floors & Units */}
                             <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 md:p-8">
-                                <h2 className="text-lg font-bold text-slate-800 mb-6 flex items-center gap-2 border-b border-slate-100 pb-4">
-                                    <Layers size={20} className="text-blue-600" />
-                                    Kat ve Daire Detayları
-                                </h2>
+                                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-100 pb-4 mb-6">
+                                    <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2">
+                                        <Layers size={20} className="text-blue-600" />
+                                        Kat ve Daire Detayları
+                                    </h2>
+
+                                    {/* Filtreleme Bölümü */}
+                                    <div className="flex flex-wrap items-center gap-3">
+                                        <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5">
+                                            <Filter size={14} className="text-slate-400" />
+                                            <select
+                                                value={statusFilter}
+                                                onChange={(e) => setStatusFilter(e.target.value)}
+                                                className="bg-transparent text-xs font-bold text-slate-600 focus:outline-none cursor-pointer"
+                                            >
+                                                <option value="ALL">Tüm Durumlar</option>
+                                                <option value="AVAILABLE">Satılık</option>
+                                                <option value="SOLD">Satıldı</option>
+                                                <option value="RESERVED">Rezerve</option>
+                                            </select>
+                                        </div>
+
+                                        <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5">
+                                            <LayoutGrid size={14} className="text-slate-400" />
+                                            <select
+                                                value={typeFilter}
+                                                onChange={(e) => setTypeFilter(e.target.value)}
+                                                className="bg-transparent text-xs font-bold text-slate-600 focus:outline-none cursor-pointer"
+                                            >
+                                                <option value="ALL">Tüm Tipler</option>
+                                                {unitTypes.map(type => (
+                                                    <option key={type} value={type}>{type}</option>
+                                                ))}
+                                            </select>
+                                        </div>
+
+                                        {(statusFilter !== 'ALL' || typeFilter !== 'ALL') && (
+                                            <button
+                                                onClick={() => {
+                                                    setStatusFilter('ALL');
+                                                    setTypeFilter('ALL');
+                                                }}
+                                                className="p-1.5 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors"
+                                                title="Filtreleri Temizle"
+                                            >
+                                                <X size={16} />
+                                            </button>
+                                        )}
+                                    </div>
+                                </div>
 
                                 <div className="space-y-8">
-                                    {[...(block.floors || [])].sort((a, b) => a.floor_number - b.floor_number).map(floor => {
+                                    {filteredFloors.map(floor => {
                                         const isExpanded = !!expandedFloors[floor.id];
                                         const isMenuOpen = activeFloorMenu === floor.id;
                                         return (
@@ -204,7 +292,7 @@ function BlockDetails() {
 
                                                 {isExpanded && (
                                                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pb-4 animate-in fade-in slide-in-from-top-2 duration-200">
-                                                        {[...(floor.units || [])].sort((a, b) => String(a.unit_number).localeCompare(String(b.unit_number), undefined, { numeric: true })).map(unit => {
+                                                        {(floor.units || []).sort((a, b) => String(a.unit_number).localeCompare(String(b.unit_number), undefined, { numeric: true })).map(unit => {
                                                             const statusDetails = getUnitStatusDetails(unit.sales_status || 'AVAILABLE');
                                                             const isUnitExpanded = !!expandedUnits[unit.id];
                                                             return (
@@ -264,16 +352,16 @@ function BlockDetails() {
                                                                 </div>
                                                             );
                                                         })}
-                                                        {(floor.units || []).length === 0 && (
-                                                            <div className="col-span-full bg-slate-50 border border-slate-100 border-dashed rounded-xl p-6 text-center text-slate-400 text-sm">
-                                                                Bu kata ait daire bulunmamaktadır.
-                                                            </div>
-                                                        )}
                                                     </div>
                                                 )}
                                             </div>
                                         )
                                     })}
+                                    {filteredFloors.length === 0 && (
+                                        <div className="bg-slate-50 border border-slate-100 border-dashed rounded-xl p-8 text-center text-slate-500">
+                                            {(statusFilter !== 'ALL' || typeFilter !== 'ALL') ? "Filtreye uygun daire bulunamadı." : "Bu blokta henüz kat ve daire tanımlanmamış."}
+                                        </div>
+                                    )}
                                     {(block.floors || []).length === 0 && (
                                         <div className="bg-slate-50 border border-slate-100 border-dashed rounded-xl p-8 text-center text-slate-500">
                                             Bu blokta henüz kat tanımlanmamış.

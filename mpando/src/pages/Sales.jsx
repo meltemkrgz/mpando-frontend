@@ -19,7 +19,9 @@ import {
   Building2,
   Banknote,
   FileText,
-  ExternalLink
+  ExternalLink,
+  Eye,
+  Download
 } from 'lucide-react';
 
 // --- Satış Durumu Renk ve İkonları ---
@@ -93,9 +95,9 @@ const initialSalesList = [
 ];
 
 const initialNewSaleData = {
-  proje_id: '', musteri_id: '', interested_product: '',
-  sale_status: 'Beklemede', budget_range: '', notes: '', offered_price: '', sale_date: '', contract_no: '', contract_url: '',
-  source: 'Seçiniz', current_meeting_status: 'Yeni', discount_requested: 'Hayır', discount_amount: 0, approval_status: 'Beklemede'
+  proje_id: '', musteri_id: '', unit_id: '', interested_product: '',
+  sale_status: 'Beklemede', budget_range: '', notes: '', offered_price: '', sale_date: '', contract_no: '',
+  source: 'Seçiniz', current_meeting_status: 'Yeni', discount_requested: 'Hayır', discount_amount: 0, approval_status: 'Beklemede', contract_file: null
 };
 
 // İsteğe bağlı (açılır/kapanır) sütunlar
@@ -103,7 +105,7 @@ const optionalColumns = [
   { key: 'offered_price', label: 'Verilen Teklif' },
   { key: 'sale_date', label: 'Satış Tarihi (Sisteme Giriş)' },
   { key: 'contract_no', label: 'Sözleşme No' },
-  { key: 'contract_url', label: 'Sözleşme Dosyası' },
+  { key: 'contract_file', label: 'Sözleşme Dosyası' },
   { key: 'createdAt', label: 'Oluşturma Tarihi' },
 ];
 
@@ -216,8 +218,15 @@ function Sales() {
   const closeAddModal = () => { setIsAddModalOpen(false); setNewSaleData(initialNewSaleData); };
 
   const handleNewSaleChange = (e) => {
-    const { name, value } = e.target;
-    setNewSaleData(prev => ({ ...prev, [name]: value }));
+    if (e.target) {
+      const { name, value, files } = e.target;
+      setNewSaleData(prev => ({
+        ...prev,
+        [name]: files ? files[0] : value
+      }));
+    } else {
+      setNewSaleData(prev => ({ ...prev, ...e }));
+    }
   };
 
   const handleAddNewSale = async () => {
@@ -225,11 +234,32 @@ function Sales() {
       alert('Müşteri ve Proje alanları zorunludur.'); return;
     }
     try {
-      const addedSale = await api.post('/sales', newSaleData);
+      const dataToSend = { ...newSaleData };
+
+      // Sayısal değerleri dönüştür
+      if (dataToSend.musteri_id) dataToSend.musteri_id = Number(dataToSend.musteri_id);
+      if (dataToSend.proje_id) dataToSend.proje_id = Number(dataToSend.proje_id);
+      if (dataToSend.unit_id) dataToSend.unit_id = Number(dataToSend.unit_id);
+      if (dataToSend.offered_price) dataToSend.offered_price = Number(dataToSend.offered_price);
+
+      let addedSale;
+      // Sadece dosya varsa FormData kullan, yoksa JSON (daha güvenli)
+      if (newSaleData.contract_file) {
+        const formData = new FormData();
+        Object.keys(dataToSend).forEach(key => {
+          if (dataToSend[key] !== null && dataToSend[key] !== undefined) {
+            formData.append(key, dataToSend[key]);
+          }
+        });
+        addedSale = await api.upload('/sales', formData);
+      } else {
+        addedSale = await api.post('/sales', dataToSend);
+      }
+
       if (addedSale) {
         setSales([addedSale, ...sales]);
         closeAddModal();
-        fetchSales(); // Refresh list to get relationships right
+        fetchSales();
       }
     } catch (err) {
       console.error('Yeni satış eklenirken hata:', err);
@@ -242,17 +272,41 @@ function Sales() {
   const closeEditModal = () => { setIsEditModalOpen(false); setTimeout(() => { setSelectedSaleForEdit(null); setEditFormData(null); }, 300); };
 
   const handleEditFormChange = (e) => {
-    const { name, value } = e.target;
-    setEditFormData(prev => ({ ...prev, [name]: value }));
+    if (e.target) {
+      const { name, value, files } = e.target;
+      setEditFormData(prev => ({
+        ...prev,
+        [name]: files ? files[0] : value
+      }));
+    } else {
+      setEditFormData(prev => ({ ...prev, ...e }));
+    }
   };
 
   const handleUpdateSale = async () => {
-    if (!editFormData.musteri_id && !editFormData.id) { alert('Hatalı veri gönderimi.'); return; }
+    if (!editFormData.musteri_id || !editFormData.id) { alert('Hatalı veri gönderimi.'); return; }
     try {
-      await api.put(`/sales/${selectedSaleForEdit.id}`, editFormData);
-      setSales(prev => prev.map(s => s.id === selectedSaleForEdit.id ? { ...s, ...editFormData } : s));
+      const dataToSend = { ...editFormData };
+
+      // Sayısal değerleri dönüştür
+      if (dataToSend.musteri_id) dataToSend.musteri_id = Number(dataToSend.musteri_id);
+      if (dataToSend.proje_id) dataToSend.proje_id = Number(dataToSend.proje_id);
+      if (dataToSend.unit_id) dataToSend.unit_id = Number(dataToSend.unit_id);
+      if (dataToSend.offered_price) dataToSend.offered_price = Number(dataToSend.offered_price);
+
+      if (editFormData.contract_file) {
+        const formData = new FormData();
+        Object.keys(dataToSend).forEach(key => {
+          if (dataToSend[key] !== null && dataToSend[key] !== undefined) {
+            formData.append(key, dataToSend[key]);
+          }
+        });
+        await api.put(`/sales/${selectedSaleForEdit.id}`, formData);
+      } else {
+        await api.put(`/sales/${selectedSaleForEdit.id}`, dataToSend);
+      }
       closeEditModal();
-      fetchSales(); // Refresh list
+      fetchSales();
     } catch (err) {
       console.error('Güncelleme sırasında hata:', err);
       alert('Güncellenemedi.');
@@ -464,30 +518,41 @@ function Sales() {
                           <td className="py-4 px-4 align-top pt-5 text-slate-500">
                             <div className="flex items-center gap-2">
                               {sale.contract_no || sale.units?.contract_no || '-'}
-                              {(sale.contract_url || sale.units?.contract_url) && (
-                                <a
-                                  href={sale.contract_url || sale.units?.contract_url}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="text-blue-500 hover:text-blue-700 transition-colors"
-                                  title="Sözleşmeyi Görüntüle"
-                                >
-                                  <ExternalLink size={14} />
-                                </a>
+                              {(sale.contract_file || sale.units?.contract_file) && (
+                                <div className="flex items-center gap-1.5 ml-1">
+                                  <a
+                                    href={sale.contract_file || sale.units?.contract_file}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="p-1 text-blue-500 hover:bg-blue-50 rounded transition-all"
+                                    title="Sözleşmeyi Görüntüle"
+                                  >
+                                    <Eye size={14} />
+                                  </a>
+                                  <a
+                                    href={sale.contract_file || sale.units?.contract_file}
+                                    download
+                                    className="p-1 text-slate-400 hover:bg-slate-50 rounded transition-all"
+                                    title="Sözleşmeyi İndir"
+                                  >
+                                    <Download size={14} />
+                                  </a>
+                                </div>
                               )}
                             </div>
                           </td>
                         )}
-                        {visibleColumns.includes('contract_url') && (
+                        {visibleColumns.includes('contract_file') && (
                           <td className="py-4 px-4 align-top pt-5">
-                            {sale.contract_url || sale.units?.contract_url ? (
+                            {sale.contract_file || sale.units?.contract_file ? (
                               <a
-                                href={sale.contract_url || sale.units?.contract_url}
+                                href={sale.contract_file || sale.units?.contract_file}
                                 target="_blank"
                                 rel="noopener noreferrer"
+                                download
                                 className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-blue-50 text-blue-600 text-xs font-medium hover:bg-blue-100 transition-colors"
                               >
-                                <FileText size={14} /> Dosya
+                                <FileText size={14} /> İndir
                               </a>
                             ) : '-'}
                           </td>
