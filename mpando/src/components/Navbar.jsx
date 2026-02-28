@@ -30,7 +30,7 @@ function Navbar({ title = "Genel Bakış", toggleMobileMenu }) {
   }, []);
 
   return (
-    <nav className="sticky top-0 z-40 w-full bg-white/80 backdrop-blur-md border-b border-slate-200 transition-all duration-300">
+    <nav className="fixed top-0 left-0 w-full md:sticky md:left-auto z-40 bg-white/80 backdrop-blur-md border-b border-slate-200 transition-all duration-300">
       <div className="flex items-center justify-between px-6 py-4">
         <div className="flex items-center gap-2">
           <button
