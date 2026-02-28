@@ -113,7 +113,7 @@ function Projects() {
   const [editFormData, setEditFormData] = useState(null);
 
   const [isColumnDropdownOpen, setIsColumnDropdownOpen] = useState(false);
-  const [visibleColumns, setVisibleColumns] = useState([]);
+  const [visibleColumns, setVisibleColumns] = useState(optionalColumns.map(col => col.key));
   const columnDropdownRef = useRef(null);
 
   const [isFilterDropdownOpen, setIsFilterDropdownOpen] = useState(false);
@@ -504,13 +504,16 @@ function Projects() {
                               <p className="text-xs font-semibold">{proj.unit}</p>
                             </div>
                           </div>
-                          <div className="flex items-center gap-2 text-slate-600">
-                            <div className="p-1.5 bg-slate-50 rounded-lg"><Users size={14} className="text-slate-400" /></div>
-                            <div>
-                              <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Sorumlu</p>
-                              <p className="text-xs font-semibold truncate max-w-[80px]" title={proj.contractor}>{proj.contractor}</p>
+
+                          {visibleColumns.includes('contractor') && (
+                            <div className="flex items-center gap-2 text-slate-600">
+                              <div className="p-1.5 bg-slate-50 rounded-lg"><Users size={14} className="text-slate-400" /></div>
+                              <div>
+                                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Sorumlu</p>
+                                <p className="text-xs font-semibold truncate max-w-[80px]" title={proj.contractor}>{proj.contractor}</p>
+                              </div>
                             </div>
-                          </div>
+                          )}
                         </div>
 
                         {/* Expandable Info Area */}
@@ -521,9 +524,27 @@ function Projects() {
                               <p className="text-xs line-clamp-1" title={proj.address}>{proj.address}</p>
                             </div>
                           )}
-                          <div className="flex items-center gap-2 text-slate-400">
-                            <Calendar size={14} className="shrink-0" />
-                            <p className="text-[11px] font-medium">Bitiş: {proj.endDate || '-'}</p>
+
+                          {visibleColumns.includes('description') && proj.description && (
+                            <div className="text-xs text-slate-500 italic line-clamp-2 bg-slate-50 p-2 rounded-lg">
+                              {proj.description}
+                            </div>
+                          )}
+
+                          <div className="flex flex-col gap-1.5">
+                            {visibleColumns.includes('startDate') && proj.startDate && (
+                              <div className="flex items-center gap-2 text-slate-400">
+                                <Calendar size={13} className="shrink-0" />
+                                <p className="text-[10px] font-medium">Başlangıç: {proj.startDate}</p>
+                              </div>
+                            )}
+                            {visibleColumns.includes('endDate') && (
+                              <div className="flex items-center gap-2 text-slate-400">
+                                <Calendar size={13} className="shrink-0 text-orange-400" />
+                                <p className="text-[10px] font-medium text-orange-600/70">Bitiş: {proj.endDate || '-'}</p>
+                              </div>
+                            )}
+
                           </div>
                         </div>
 

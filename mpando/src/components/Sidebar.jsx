@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useLocation, Link, href } from "react-router-dom";
+import { useLocation, Link } from "react-router-dom";
 import SecondHandListings from "../pages/SecondHandListings";
 
 const icons = {
@@ -342,7 +342,6 @@ const navigationGroups = [
       {
         name: "Dashboard",
         icon: icons.Dashboard,
-        isActive: true,
         href: "/dashboard",
       },
       { name: "Projeler", icon: icons.Projects, href: "/projects" },
@@ -388,13 +387,13 @@ export default function AppleStyleSidebar({
         >
           <div className="flex items-center gap-3">
             <div
-                className={`rounded-xl bg-white text-slate-900 flex items-center justify-center font-bold shadow-lg shadow-slate-900/20 transition-all duration-300 ${isSidebarCollapsed ? 'w-10 h-10 text-lg' : 'w-8 h-8 text-sm'}`}
->
-                <img 
-                    src="/logo.png" 
-                    alt="User" 
-                    className="w-full h-full object-cover"
-                />
+              className={`rounded-xl bg-white text-slate-900 flex items-center justify-center font-bold shadow-lg shadow-slate-900/20 transition-all duration-300 ${isSidebarCollapsed ? 'w-10 h-10 text-lg' : 'w-8 h-8 text-sm'}`}
+            >
+              <img
+                src="/logo.png"
+                alt="User"
+                className="w-full h-full object-cover"
+              />
             </div>
             {!isSidebarCollapsed && (
               <span className="text-slate-900 font-bold text-lg tracking-tight">
@@ -411,14 +410,14 @@ export default function AppleStyleSidebar({
           </button>
 
           {!isSidebarCollapsed && (
-          <button 
-            className="hidden md:block p-1.5 text-slate-400 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition-all"
-            onClick={toggleDesktopCollapse}
-          >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M11 19l-7-7 7-7m8 14l-7-7 7-7" />
-            </svg>
-          </button>
+            <button
+              className="hidden md:block p-1.5 text-slate-400 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition-all"
+              onClick={toggleDesktopCollapse}
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M11 19l-7-7 7-7m8 14l-7-7 7-7" />
+              </svg>
+            </button>
           )}
 
           {isSidebarCollapsed && (
@@ -471,31 +470,34 @@ export default function AppleStyleSidebar({
                   </p>
                 )}
                 <ul className="space-y-0.5">
-                  {group.items.map((item, itemIdx) => (
-                    <li key={itemIdx}>
-                      <a
-                        href={item.href}
-                        onClick={closeMobileMenu}
-                        className={`
-                          group flex items-center gap-3 px-3 py-2 rounded-lg transition-all duration-200 ease-out
-                          ${item.isActive 
-                            ? 'bg-white text-slate-900 shadow-[0_1px_2px_rgba(0,0,0,0.05)] ring-1 ring-slate-200 font-medium' 
-                            : 'text-slate-500 hover:bg-slate-100/80 hover:text-slate-900'
-                          } 
-                          ${isSidebarCollapsed ? 'justify-center px-0 py-3' : ''}
-                        `}
-                        title={isSidebarCollapsed ? item.name : undefined}
-                      >
-                        <span className={`
-                          transition-transform duration-200 group-hover:scale-105
-                          ${item.isActive ? 'text-blue-600' : 'text-slate-400 group-hover:text-slate-600'}
-                        `}>
-                          {item.icon}
-                        </span>
-                        {!isSidebarCollapsed && <span className="text-[13.5px]">{item.name}</span>}
-                      </a>
-                    </li>
-                  ))}
+                  {group.items.map((item, itemIdx) => {
+                    const isActive = location.pathname.startsWith(item.href);
+                    return (
+                      <li key={itemIdx}>
+                        <Link
+                          to={item.href}
+                          onClick={closeMobileMenu}
+                          className={`
+                            group flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 ease-out
+                            ${isActive
+                              ? 'bg-blue-600 text-white shadow-md shadow-blue-600/20 font-semibold'
+                              : 'text-slate-500 hover:bg-slate-100 hover:text-slate-900'
+                            } 
+                            ${isSidebarCollapsed ? 'justify-center px-0 py-3' : ''}
+                          `}
+                          title={isSidebarCollapsed ? item.name : undefined}
+                        >
+                          <span className={`
+                            transition-transform duration-200 group-hover:scale-110
+                            ${isActive ? 'text-white' : 'text-slate-400 group-hover:text-slate-600'}
+                          `}>
+                            {item.icon}
+                          </span>
+                          {!isSidebarCollapsed && <span className="text-[13.5px] tracking-wide">{item.name}</span>}
+                        </Link>
+                      </li>
+                    );
+                  })}
                 </ul>
               </div>
             ))}
@@ -507,7 +509,7 @@ export default function AppleStyleSidebar({
           <ul className="space-y-1 mb-3">
             <li>
               <a href="#" className={`flex items-center gap-3 px-3 py-2 rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-900 transition-colors ${isSidebarCollapsed ? 'justify-center' : ''}`}>
-                 <span className="group-hover:text-slate-600">{icons.Help}</span>
+                <span className="group-hover:text-slate-600">{icons.Help}</span>
                 {!isSidebarCollapsed && <span className="text-sm">Destek ve Yardım</span>}
               </a>
             </li>
