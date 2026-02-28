@@ -230,17 +230,16 @@ const SecondHandEditModal = ({ isOpen, onClose, data, onSave, agents = [] }) => 
                   <label className="text-sm font-medium text-slate-700 flex items-center gap-2">
                     <User size={14} /> Kaydı Giren Danışman <span className="text-red-500">*</span>
                   </label>
-                  <div className="relative">
-                    <select name="agentName" value={formData.agentName} onChange={handleChange} className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white appearance-none cursor-pointer" required>
-                      <option value="">Danışman Seçiniz</option>
-                      {availableAgents.map(agent => <option key={agent} value={agent}>{agent}</option>)}
-                    </select>
-                    <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={16} />
+                  <input
+                    placeholder='varsayılan kullanıcı'
+                    type="text"
+                    name="agentName"
+                    value={formData.agentName}
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg bg-slate-100 cursor-not-allowed text-slate-600 outline-none"
+                    readOnly
+                    disabled
+                  />
                   </div>
-                  {formData.agentName === 'Diğer' && (
-                    <input type="text" name="customAgentName" value={formData.customAgentName} onChange={handleChange} placeholder="Danışman Adı Giriniz" className="w-full mt-2 px-3 py-2 border border-blue-300 bg-blue-50/30 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm" required/>
-                  )}
-                </div>
               </div>
             </section>
 

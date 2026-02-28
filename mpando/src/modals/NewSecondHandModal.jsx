@@ -11,10 +11,12 @@ import {
   FileText
 } from 'lucide-react';
 
-export default function NewSecondHandModal({ isOpen, onClose, onAdd, agents = [] }) {
+// loggedInAgentName prop'u eklendi
+export default function NewSecondHandModal({ isOpen, onClose, onAdd, loggedInAgentName, agents = [] }) {
   const defaultProjects = ['Güneş Sitesi 3. Etap', 'Deniz Manzaralı Müstakil', 'Merkez Plaza', 'Diğer'];
   const defaultBlocks = ['A Blok', 'B Blok', 'C Blok', 'Bağımsız', 'Diğer'];
-  const availableAgents = agents.length > 0 ? [...agents, 'Diğer'] : ['Ahmet Yılmaz', 'Zeynep Kaya', 'Mustafa Öztürk', 'Diğer'];
+  // availableAgents artık bu modalda kullanılmadığı için sadeleştirilebilir
+  // veya sadece display amaçlı tutulabilir. Ancak input disabled olacağı için listeden bağımsızdır.
 
   const initialData = {
     projectName: '',
@@ -31,19 +33,22 @@ export default function NewSecondHandModal({ isOpen, onClose, onAdd, agents = []
     deposit: '',
     commission: '',
     notes: '',
-    agentName: '',
-    customAgentName: '',
+    agentName: loggedInAgentName || '', // Giriş yapmış danışman adı varsayılan olarak gelir
     contractStartDate: '',
     contractEndDate: '',
   };
 
   const [formData, setFormData] = useState(initialData);
   
+  // Modal açıldığında form verilerini sıfırlar ve loggedInAgentName'i ayarlar
   useEffect(() => {
     if (isOpen) {
-      setFormData(initialData);
+      setFormData({
+        ...initialData,
+        agentName: loggedInAgentName || '', // Her açılışta güncel loggedInAgentName'i kullan
+      });
     }
-  }, [isOpen]);
+  }, [isOpen, loggedInAgentName]); // loggedInAgentName değişirse de effect çalışsın
 
   if (!isOpen) return null;
 
@@ -57,7 +62,10 @@ export default function NewSecondHandModal({ isOpen, onClose, onAdd, agents = []
 
     const finalProjectName = formData.projectName === 'Diğer' ? formData.customProjectName : formData.projectName;
     const finalBlock = formData.blockInfo === 'Diğer' ? formData.customBlockInfo : formData.blockInfo;
-    const finalAgentName = formData.agentName === 'Diğer' ? formData.customAgentName : formData.agentName;
+    
+    // agentName zaten loggedInAgentName'den geldiği ve değiştirilemediği için
+    // customAgentName mantığına gerek kalmaz, direkt formData.agentName kullanılır.
+    const finalAgentName = formData.agentName; 
 
     if (!finalProjectName || !finalBlock || !formData.ownerName || !formData.type || !formData.price || !finalAgentName) {
       alert("Lütfen zorunlu (*) alanları doldurunuz.");
@@ -202,16 +210,15 @@ export default function NewSecondHandModal({ isOpen, onClose, onAdd, agents = []
                   <label className="text-sm font-medium text-slate-700 flex items-center gap-2">
                     <User size={14} /> Kaydı Giren Danışman <span className="text-red-500">*</span>
                   </label>
-                  <div className="relative">
-                    <select name="agentName" value={formData.agentName} onChange={handleChange} className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white appearance-none cursor-pointer" required>
-                      <option value="">Danışman Seçiniz</option>
-                      {availableAgents.map(agent => <option key={agent} value={agent}>{agent}</option>)}
-                    </select>
-                    <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={16} />
-                  </div>
-                  {formData.agentName === 'Diğer' && (
-                    <input type="text" name="customAgentName" value={formData.customAgentName} onChange={handleChange} placeholder="Danışman Adı Giriniz" className="w-full mt-2 px-3 py-2 border border-blue-300 bg-blue-50/30 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm" required/>
-                  )}
+                  <input
+                    placeholder='varsayılan kullanıcı'
+                    type="text"
+                    name="agentName"
+                    value={formData.agentName}
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg bg-slate-100 cursor-not-allowed text-slate-600 outline-none"
+                    readOnly
+                    disabled
+                  />
                 </div>
               </div>
             </section>
