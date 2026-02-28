@@ -12,14 +12,14 @@ import {
   ChevronDown
 } from 'lucide-react';
 
-function CustomerEditModal({ 
-  isOpen, 
-  customerData, 
-  onClose, 
-  onChange, 
-  onSave, 
-  companies, 
-  employees 
+export default function NewCustomerModal({
+  isOpen,
+  onClose,
+  newCustomerData,
+  onChange,
+  onAdd,
+  companies = [],
+  employees = []
 }) {
   if (!isOpen) return null;
 
@@ -30,10 +30,8 @@ function CustomerEditModal({
         {/* --- Header --- */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-white sticky top-0 z-10">
           <div>
-            <h2 className="text-lg font-bold text-slate-800">Müşteriyi Düzenle</h2>
-            <p className="text-xs text-slate-500 mt-0.5">
-              {customerData?.id ? `#1000${customerData.id} numaralı` : 'Mevcut'} müşteri kaydını güncelliyorsunuz.
-            </p>
+            <h2 className="text-lg font-bold text-slate-800">Yeni Müşteri Ekle</h2>
+            <p className="text-xs text-slate-500 mt-0.5">Sisteme yeni bir müşteri kaydı oluşturun.</p>
           </div>
           <button 
             type="button"
@@ -47,8 +45,8 @@ function CustomerEditModal({
         {/* --- Form Body (Scrollable) --- */}
         <div className="p-6 overflow-y-auto custom-scrollbar">
           <form 
-            id="edit-customer-form" 
-            onSubmit={(e) => { e.preventDefault(); onSave(); }} 
+            id="new-customer-form" 
+            onSubmit={(e) => { e.preventDefault(); onAdd(); }} 
             className="space-y-6"
           >
             
@@ -61,7 +59,9 @@ function CustomerEditModal({
                 
                 {/* Müşteri Adı Soyadı */}
                 <div className="space-y-1.5">
-                  <label className="text-sm font-medium text-slate-700">Müşteri Adı Soyadı</label>
+                  <label className="text-sm font-medium text-slate-700">
+                    Müşteri Adı Soyadı <span className="text-red-500">*</span>
+                  </label>
                   <div className="relative">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
                       <User size={16} />
@@ -69,9 +69,11 @@ function CustomerEditModal({
                     <input
                       type="text"
                       name="full_name"
-                      value={customerData?.full_name || customerData?.customer_full_name || ''}
+                      value={newCustomerData.full_name || ''}
                       onChange={onChange}
-                      className="block w-full pl-10 pr-3 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-100 focus:border-blue-400 outline-none transition-all text-sm"
+                      placeholder="Örn: Ahmet Yılmaz"
+                      required
+                      className="block w-full pl-10 pr-3 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-100 focus:border-blue-400 outline-none transition-all text-sm placeholder:text-slate-400"
                     />
                   </div>
                 </div>
@@ -86,17 +88,20 @@ function CustomerEditModal({
                     <input
                       type="text"
                       name="identity_number"
-                      value={customerData?.identity_number || ''}
+                      value={newCustomerData.identity_number || ''}
                       onChange={onChange}
+                      placeholder="11 Haneli TC Kimlik"
                       maxLength={11}
-                      className="block w-full pl-10 pr-3 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-100 focus:border-blue-400 outline-none transition-all text-sm"
+                      className="block w-full pl-10 pr-3 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-100 focus:border-blue-400 outline-none transition-all text-sm placeholder:text-slate-400"
                     />
                   </div>
                 </div>
 
                 {/* Telefon Numarası */}
                 <div className="space-y-1.5">
-                  <label className="text-sm font-medium text-slate-700">Telefon Numarası</label>
+                  <label className="text-sm font-medium text-slate-700">
+                    Telefon Numarası <span className="text-red-500">*</span>
+                  </label>
                   <div className="relative">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
                       <Phone size={16} />
@@ -104,9 +109,11 @@ function CustomerEditModal({
                     <input
                       type="tel"
                       name="phone"
-                      value={customerData?.phone || ''}
+                      value={newCustomerData.phone || ''}
                       onChange={onChange}
-                      className="block w-full pl-10 pr-3 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-100 focus:border-blue-400 outline-none transition-all text-sm"
+                      placeholder="05XX XXX XX XX"
+                      required
+                      className="block w-full pl-10 pr-3 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-100 focus:border-blue-400 outline-none transition-all text-sm placeholder:text-slate-400"
                     />
                   </div>
                 </div>
@@ -121,9 +128,10 @@ function CustomerEditModal({
                     <input
                       type="email"
                       name="email"
-                      value={customerData?.email || ''}
+                      value={newCustomerData.email || ''}
                       onChange={onChange}
-                      className="block w-full pl-10 pr-3 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-100 focus:border-blue-400 outline-none transition-all text-sm"
+                      placeholder="ornek@email.com"
+                      className="block w-full pl-10 pr-3 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-100 focus:border-blue-400 outline-none transition-all text-sm placeholder:text-slate-400"
                     />
                   </div>
                 </div>
@@ -142,19 +150,22 @@ function CustomerEditModal({
                 
                 {/* Şirket Adı */}
                 <div className="space-y-1.5">
-                  <label className="text-sm font-medium text-slate-700">Şirket Adı</label>
+                  <label className="text-sm font-medium text-slate-700">
+                    Şirket Adı <span className="text-red-500">*</span>
+                  </label>
                   <div className="relative">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
                       <Building2 size={16} />
                     </div>
                     <select
                       name="company_id"
-                      value={customerData?.company_id || ''}
+                      value={newCustomerData.company_id || ''}
                       onChange={onChange}
+                      required
                       className="block w-full pl-10 pr-10 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-100 focus:border-blue-400 outline-none transition-all text-sm text-slate-700 appearance-none cursor-pointer"
                     >
-                      <option value="">Seçiniz</option>
-                      {(companies || []).map(company => (
+                      <option value="" disabled>Seçiniz</option>
+                      {companies.map(company => (
                         <option key={company.id} value={company.id}>
                           {company.name}
                         </option>
@@ -166,19 +177,22 @@ function CustomerEditModal({
 
                 {/* Sorumlu Çalışan */}
                 <div className="space-y-1.5">
-                  <label className="text-sm font-medium text-slate-700">Sorumlu Çalışan</label>
+                  <label className="text-sm font-medium text-slate-700">
+                    Sorumlu Çalışan <span className="text-red-500">*</span>
+                  </label>
                   <div className="relative">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
                       <Briefcase size={16} />
                     </div>
                     <select
                       name="employee_id"
-                      value={customerData?.employee_id || ''}
+                      value={newCustomerData.employee_id || ''}
                       onChange={onChange}
+                      required
                       className="block w-full pl-10 pr-10 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-100 focus:border-blue-400 outline-none transition-all text-sm text-slate-700 appearance-none cursor-pointer"
                     >
-                      <option value="">Seçiniz</option>
-                      {(employees || []).map(employee => (
+                      <option value="" disabled>Seçiniz</option>
+                      {employees.map(employee => (
                         <option key={employee.id} value={employee.id}>
                           {employee.full_name || employee.name}
                         </option>
@@ -200,10 +214,11 @@ function CustomerEditModal({
               </label>
               <textarea
                 name="address"
-                value={customerData?.address || ''}
+                value={newCustomerData.address || ''}
                 onChange={onChange}
                 rows="3"
-                className="block w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-100 focus:border-blue-400 outline-none transition-all text-sm resize-none"
+                placeholder="Müşteriye ait açık adres bilgisi..."
+                className="block w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-100 focus:border-blue-400 outline-none transition-all text-sm placeholder:text-slate-400 resize-none"
               ></textarea>
             </div>
 
@@ -221,11 +236,11 @@ function CustomerEditModal({
           </button>
           <button
             type="submit"
-            form="edit-customer-form"
+            form="new-customer-form"
             className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors shadow-sm"
           >
             <Save size={16} />
-            Müşteriyi Kaydet
+            Müşteriyi Ekle
           </button>
         </div>
 
@@ -233,5 +248,3 @@ function CustomerEditModal({
     </div>
   );
 }
-
-export default CustomerEditModal;

@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react'; // useMemo import edildi
 import Sidebar from '../components/Sidebar';
 import Navbar from '../components/Navbar';
+import NewCostumerModal from '../modals/NewCostumerModal';
 import CustomerEditModal from '../modals/CostumerEditModal';
 import { useAuth } from "../context/AuthContext";
 import { api } from '../api/client';
@@ -342,7 +343,7 @@ function Customers() {
           <SectionHeader
             title="Müşteri Listesi"
             action={
-              <>
+<>
                 {/* Filtreleme Dropdown'ı */}
                 <div className="relative" ref={filterDropdownRef}>
                   <button
@@ -495,74 +496,17 @@ function Customers() {
           employees={employees}
         />
 
-        {isAddModalOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/20 backdrop-blur-[2px] p-4">
-            <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in-95 duration-200">
-              <div className="flex items-center justify-between p-5 border-b border-slate-100">
-                <h3 className="text-lg font-bold text-slate-800">Yeni Müşteri Ekle</h3>
-                <button onClick={closeAddModal} className="text-slate-400 hover:text-slate-600 hover:bg-slate-100 p-1.5 rounded-lg transition-colors">
-                  <X size={20} />
-                </button>
-              </div>
-              <form onSubmit={(e) => { e.preventDefault(); handleAddNewCustomer(); }}>
-                <div className="p-5 space-y-4 max-h-[70vh] overflow-y-auto">
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-1">Müşteri Adı Soyadı</label>
-                    <input type="text" name="full_name" value={newCustomerData.full_name} onChange={handleNewCustomerChange} className="w-full border border-slate-200 rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-blue-600/30 focus:border-blue-600 transition-all text-sm" />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-1">Şirket Adı</label>
-                    <select
-                      name="company_id"
-                      value={newCustomerData.company_id}
-                      onChange={handleNewCustomerChange}
-                      className="w-full border border-slate-200 rounded-lg py-2.5 pl-3 pr-10 outline-none focus:ring-2 focus:ring-blue-600/30 focus:border-blue-600 transition-all text-sm bg-white cursor-pointer"
-                    >
-                      <option value="">Seçiniz</option>
-                      {companies.map(company => (
-                        <option key={company.id} value={company.id}>{company.name}</option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-1">Sorumlu Çalışan</label>
-                    <select
-                      name="employee_id"
-                      value={newCustomerData.employee_id}
-                      onChange={handleNewCustomerChange}
-                      className="w-full border border-slate-200 rounded-lg py-2.5 pl-3 pr-10 outline-none focus:ring-2 focus:ring-blue-600/30 focus:border-blue-600 transition-all text-sm bg-white cursor-pointer"
-                    >
-                      <option value="">Seçiniz</option>
-                      {employees.map(employee => (
-                        <option key={employee.id} value={employee.id}>{employee.full_name || employee.name}</option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-1">TC Kimlik No</label>
-                    <input type="text" name="identity_number" value={newCustomerData.identity_number} onChange={handleNewCustomerChange} className="w-full border border-slate-200 rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-blue-600/30 focus:border-blue-600 transition-all text-sm" />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-1">Telefon Numarası</label>
-                    <input type="tel" name="phone" value={newCustomerData.phone} onChange={handleNewCustomerChange} className="w-full border border-slate-200 rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-blue-600/30 focus:border-blue-600 transition-all text-sm" />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-1">E-posta</label>
-                    <input type="email" name="email" value={newCustomerData.email} onChange={handleNewCustomerChange} className="w-full border border-slate-200 rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-blue-600/30 focus:border-blue-600 transition-all text-sm" />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-1">Adres</label>
-                    <textarea name="address" value={newCustomerData.address} onChange={handleNewCustomerChange} rows="3" className="w-full border border-slate-200 rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-blue-600/30 focus:border-blue-600 transition-all text-sm"></textarea>
-                  </div>
-                </div>
-                <div className="flex items-center justify-end gap-3 p-5 border-t border-slate-100 bg-slate-50">
-                  <button type="button" onClick={closeAddModal} className="px-4 py-2 text-sm font-medium text-slate-600 hover:text-slate-800 hover:bg-slate-200 rounded-lg transition-colors">İptal</button>
-                  <button type="submit" className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 shadow-sm rounded-lg transition-all">Müşteriyi Ekle</button>
-                </div>
-              </form>
-            </div>
-          </div>
-        )}
+        {/* Eski inline form silindi, yerine aşağıdaki modal çağrısı eklendi */}
+        <NewCostumerModal 
+          isOpen={isAddModalOpen}
+          onClose={closeAddModal}
+          newCustomerData={newCustomerData}
+          onChange={handleNewCustomerChange}
+          onAdd={handleAddNewCustomer}
+          companies={companies}
+          employees={employees}
+        />
+
       </main>
     </div>
   );

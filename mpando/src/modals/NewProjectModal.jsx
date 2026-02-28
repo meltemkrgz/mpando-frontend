@@ -1,5 +1,17 @@
 import React from 'react';
-import { X, ChevronDown } from 'lucide-react';
+import {
+  X,
+  Save,
+  Building2,
+  Briefcase,
+  Home,
+  Info,
+  Calendar,
+  CalendarCheck,
+  MapPin,
+  ChevronDown,
+  AlignLeft
+} from 'lucide-react';
 
 const NewProjectModal = ({
   isOpen,
@@ -12,152 +24,235 @@ const NewProjectModal = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/20 backdrop-blur-[2px] p-4">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in-95 duration-200">
-        <form onSubmit={(e) => { e.preventDefault(); onAdd(); }}>
-          <div className="flex items-center justify-between p-5 border-b border-slate-100">
-            <h3 className="text-lg font-bold text-slate-800">
-              Yeni Proje Ekle
-            </h3>
-            <button
-              type="button"
-              onClick={onClose}
-              className="text-slate-400 hover:text-slate-600 hover:bg-slate-100 p-1.5 rounded-lg transition-colors"
-            >
-              <X size={20} />
-            </button>
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-in fade-in duration-200">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden border border-slate-100 flex flex-col max-h-[90vh]">
+        
+        {/* --- Header --- */}
+        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-white sticky top-0 z-10">
+          <div>
+            <h2 className="text-lg font-bold text-slate-800">Yeni Proje Ekle</h2>
+            <p className="text-xs text-slate-500 mt-0.5">Sisteme yeni bir proje veya şantiye kaydı oluşturun.</p>
           </div>
-          <div className="p-5 space-y-4 max-h-[70vh] overflow-y-auto">
+          <button 
+            type="button"
+            onClick={onClose}
+            className="p-2 hover:bg-slate-100 rounded-full text-slate-400 hover:text-slate-600 transition-colors"
+          >
+            <X size={20} />
+          </button>
+        </div>
+
+        {/* --- Form Body (Scrollable) --- */}
+        <div className="p-6 overflow-y-auto custom-scrollbar">
+          <form 
+            id="new-project-form" 
+            onSubmit={(e) => { e.preventDefault(); onAdd(); }} 
+            className="space-y-6"
+          >
+            
+            {/* Bölüm 1: Proje Temel Bilgileri */}
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">
-                Proje Adı
-              </label>
-              <input
-                type="text"
-                name="company"
-                value={formData.company || ''}
-                onChange={onChange}
-                className="w-full border border-slate-200 rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-blue-600/30 focus:border-blue-600 transition-all text-sm"
-              />
+              <h3 className="text-xs font-bold text-blue-600 uppercase tracking-wider mb-3 flex items-center gap-2">
+                <Building2 size={14} /> Proje Temel Bilgileri
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                
+                {/* Proje Adı */}
+                <div className="space-y-1.5">
+                  <label className="text-sm font-medium text-slate-700">Proje Adı <span className="text-red-500">*</span></label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                      <Building2 size={16} />
+                    </div>
+                    <input
+                      type="text"
+                      name="company" // Kodunuzdaki name: company olarak bırakıldı
+                      value={formData.company || ''}
+                      onChange={onChange}
+                      placeholder="Örn: Güneş Evleri Projesi"
+                      required
+                      className="block w-full pl-10 pr-3 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-100 focus:border-blue-400 outline-none transition-all text-sm placeholder:text-slate-400"
+                    />
+                  </div>
+                </div>
+
+                {/* Müteahhit */}
+                <div className="space-y-1.5">
+                  <label className="text-sm font-medium text-slate-700">Müteahhit / Firma <span className="text-red-500">*</span></label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                      <Briefcase size={16} />
+                    </div>
+                    <select
+                      name="contractor_id"
+                      value={formData.contractor_id || ''}
+                      onChange={onChange}
+                      required
+                      className="block w-full pl-10 pr-10 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-100 focus:border-blue-400 outline-none transition-all text-sm text-slate-700 appearance-none cursor-pointer"
+                    >
+                      <option value="" disabled>Seçiniz</option>
+                      {(contractors || []).map(c => (
+                        <option key={c.id} value={c.id}>
+                          {c.full_name || c.name || c.email}
+                        </option>
+                      ))}
+                    </select>
+                    <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+                  </div>
+                </div>
+
+                {/* Ünite Sayısı */}
+                <div className="space-y-1.5">
+                  <label className="text-sm font-medium text-slate-700">Ünite Sayısı</label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                      <Home size={16} />
+                    </div>
+                    <input
+                      type="number"
+                      name="unit"
+                      value={formData.unit || ''}
+                      onChange={onChange}
+                      placeholder="Örn: 48"
+                      className="block w-full pl-10 pr-3 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-100 focus:border-blue-400 outline-none transition-all text-sm placeholder:text-slate-400 font-medium"
+                    />
+                  </div>
+                </div>
+
+                {/* Durumu */}
+                <div className="space-y-1.5">
+                  <label className="text-sm font-medium text-slate-700">Proje Durumu</label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                      <Info size={16} />
+                    </div>
+                    <select
+                      name="status"
+                      value={formData.status || 'Devam Ediyor'}
+                      onChange={onChange}
+                      className="block w-full pl-10 pr-10 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-100 focus:border-blue-400 outline-none transition-all text-sm text-slate-700 appearance-none cursor-pointer"
+                    >
+                      <option value="Devam Ediyor">Devam Ediyor</option>
+                      <option value="Planlanıyor">Planlanıyor</option>
+                      <option value="Gecikmede">Gecikmede</option>
+                      <option value="Bitiyor">Bitiyor</option>
+                      <option value="Tamamlandı">Tamamlandı</option>
+                    </select>
+                    <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+                  </div>
+                </div>
+
+              </div>
             </div>
+
+            <hr className="border-slate-100" />
+
+            {/* Bölüm 2: Tarih & Lokasyon */}
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">
-                Adres
-              </label>
-              <input
-                type="text"
-                name="address"
-                value={formData.address || ''}
-                onChange={onChange}
-                className="w-full border border-slate-200 rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-blue-600/30 focus:border-blue-600 transition-all text-sm"
-              />
+              <h3 className="text-xs font-bold text-blue-600 uppercase tracking-wider mb-3 flex items-center gap-2">
+                <Calendar size={14} /> Tarih & Konum
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                
+                {/* Başlangıç Tarihi */}
+                <div className="space-y-1.5">
+                  <label className="text-sm font-medium text-slate-700">Başlangıç Tarihi</label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                      <Calendar size={16} />
+                    </div>
+                    <input
+                      type="date"
+                      name="startDate"
+                      value={formData.startDate || ''}
+                      onChange={onChange}
+                      className="block w-full pl-10 pr-3 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-100 focus:border-blue-400 outline-none transition-all text-sm placeholder:text-slate-400 text-slate-700"
+                    />
+                  </div>
+                </div>
+
+                {/* Bitiş Tarihi (Sadece Tamamlandı ise) */}
+                {formData.status === 'Tamamlandı' ? (
+                  <div className="space-y-1.5 animate-in fade-in zoom-in-95 duration-200">
+                    <label className="text-sm font-medium text-slate-700">Bitiş Tarihi</label>
+                    <div className="relative">
+                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                        <CalendarCheck size={16} />
+                      </div>
+                      <input
+                        type="date"
+                        name="endDate"
+                        value={formData.endDate || ''}
+                        onChange={onChange}
+                        className="block w-full pl-10 pr-3 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-100 focus:border-blue-400 outline-none transition-all text-sm placeholder:text-slate-400 text-slate-700"
+                      />
+                    </div>
+                  </div>
+                ) : (
+                  // Layout kaymasını önlemek için boş bir div bırakıyoruz
+                  <div className="hidden md:block"></div>
+                )}
+
+                {/* Adres */}
+                <div className="space-y-1.5 md:col-span-2">
+                  <label className="text-sm font-medium text-slate-700">Proje Adresi</label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                      <MapPin size={16} />
+                    </div>
+                    <input
+                      type="text"
+                      name="address"
+                      value={formData.address || ''}
+                      onChange={onChange}
+                      placeholder="Örn: Merkez Mah. Atatürk Cad. No:1"
+                      className="block w-full pl-10 pr-3 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-100 focus:border-blue-400 outline-none transition-all text-sm placeholder:text-slate-400"
+                    />
+                  </div>
+                </div>
+
+              </div>
             </div>
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">
-                Ünite
-              </label>
-              <input
-                type="number"
-                name="unit"
-                value={formData.unit || ''}
-                onChange={onChange}
-                className="w-full border border-slate-200 rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-blue-600/30 focus:border-blue-600 transition-all text-sm"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">
-                Açıklama
+
+            <hr className="border-slate-100" />
+
+            {/* Bölüm 3: Açıklama */}
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium text-slate-700 flex items-center gap-2">
+                <AlignLeft size={16} className="text-slate-400" /> Açıklama / Notlar
               </label>
               <textarea
-                rows="3"
                 name="description"
                 value={formData.description || ''}
                 onChange={onChange}
-                className="w-full border border-slate-200 rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-blue-600/30 focus:border-blue-600 transition-all text-sm"
+                rows="3"
+                placeholder="Proje hakkında eklemek istediğiniz detaylar..."
+                className="block w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-100 focus:border-blue-400 outline-none transition-all text-sm placeholder:text-slate-400 resize-none"
               ></textarea>
             </div>
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">
-                Müteahhit
-              </label>
-              <div className="relative">
-                <select
-                  name="contractor_id"
-                  value={formData.contractor_id || ''}
-                  onChange={onChange}
-                  className="w-full appearance-none border border-slate-200 rounded-lg py-2.5 pl-3 pr-10 outline-none focus:ring-2 focus:ring-blue-600/30 focus:border-blue-600 transition-all text-sm bg-white cursor-pointer"
-                >
-                  <option value="">Seçiniz</option>
-                  {(contractors || []).map(c => (
-                    <option key={c.id} value={c.id}>{c.full_name || c.name || c.email}</option>
-                  ))}
-                </select>
-                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
-              </div>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">
-                Başlangıç Tarihi
-              </label>
-              <input
-                type="date"
-                name="startDate"
-                value={formData.startDate || ''}
-                onChange={onChange}
-                className="w-full border border-slate-200 rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-blue-600/30 focus:border-blue-600 transition-all text-sm"
-              />
-            </div>
-            {formData.status === 'Tamamlandı' && (
-              <div className="animate-in fade-in slide-in-from-top-2 duration-200">
-                <label className="block text-sm font-medium text-slate-700 mb-1">
-                  Bitiş Tarihi
-                </label>
-                <input
-                  type="date"
-                  name="endDate"
-                  value={formData.endDate || ''}
-                  onChange={onChange}
-                  className="w-full border border-slate-200 rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-blue-600/30 focus:border-blue-600 transition-all text-sm"
-                />
-              </div>
-            )}
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">
-                Durumu
-              </label>
-              <div className="relative"> {/* Select için ChevronDown ikonu ekledim */}
-                <select
-                  name="status"
-                  value={formData.status || 'Devam Ediyor'}
-                  onChange={onChange}
-                  className="w-full appearance-none border border-slate-200 rounded-lg py-2.5 pl-3 pr-10 outline-none focus:ring-2 focus:ring-blue-600/30 focus:border-blue-600 transition-all text-sm bg-white cursor-pointer"
-                >
-                  <option>Devam Ediyor</option>
-                  <option>Planlanıyor</option>
-                  <option>Gecikmede</option>
-                  <option>Bitiyor</option>
-                  <option>Tamamlandı</option>
-                </select>
-                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
-              </div>
-            </div>
-          </div>
-          <div className="flex items-center justify-end gap-3 p-5 border-t border-slate-100 bg-slate-50">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-4 py-2 text-sm font-medium text-slate-600 hover:text-slate-800 hover:bg-slate-200 rounded-lg transition-colors"
-            >
-              İptal
-            </button>
-            <button
-              type="submit"
-              className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 shadow-sm rounded-lg transition-all"
-            >
-              Projeyi Ekle
-            </button>
-          </div>
-        </form>
+
+          </form>
+        </div>
+
+        {/* --- Footer --- */}
+        <div className="px-6 py-4 border-t border-slate-100 bg-slate-50 flex items-center justify-end gap-3">
+          <button
+            type="button"
+            onClick={onClose}
+            className="px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 hover:text-slate-900 transition-colors shadow-sm"
+          >
+            İptal
+          </button>
+          <button
+            type="submit"
+            form="new-project-form"
+            className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors shadow-sm"
+          >
+            <Save size={16} />
+            Projeyi Ekle
+          </button>
+        </div>
+
       </div>
     </div>
   );
