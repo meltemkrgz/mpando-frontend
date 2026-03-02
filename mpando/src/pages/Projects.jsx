@@ -69,14 +69,15 @@ const initialProjectList = [
 
 const initialNewProjectData = {
   company: '',
-  unit: '',
   address: '',
   status: 'Devam Ediyor',
   description: '',
   startDate: new Date().toISOString().split('T')[0],
   endDate: '',
   contractor: '',
-  contractor_id: ''
+  contractor_id: '',
+  location_lat: '',
+  location_lng: ''
 };
 
 const optionalColumns = [
@@ -171,14 +172,14 @@ function Projects() {
             mappedStatus = 'Tamamlandı';
           } else if (rawStatus === 'DELAYED' || p.status === 'Gecikmede') {
             mappedStatus = 'Gecikmede';
-          } else if (p.status === 'Bitiyor') {
+          } else if (rawStatus === 'FINISHING' || p.status === 'Bitiyor') {
             mappedStatus = 'Bitiyor';
           }
 
           return {
             id: p.id,
             company: p.name || p.project_name || p.title || 'İsimsiz Proje',
-            unit: p.total_units !== undefined && p.total_units !== null ? p.total_units : (p.unit_count !== undefined && p.unit_count !== null ? p.unit_count : '-'),
+            unit: p.unit_count ?? p.total_units ?? 0,
             address: p.address || p.location || '',
             status: mappedStatus,
             progress: mappedStatus === 'Tamamlandı' ? 100
@@ -207,7 +208,9 @@ function Projects() {
               return String(raw).split('T')[0];
             })(),
             contractor: p.users?.full_name || p.users?.name || p.creator_name || 'Atanmamış',
-            contractor_id: p.created_by
+            contractor_id: p.created_by?.id || p.created_by || '',
+            location_lat: p.location_lat || '',
+            location_lng: p.location_lng || '',
           };
         });
         setProjects(mappedProjects);
@@ -265,7 +268,7 @@ function Projects() {
   };
 
   const handleAddNewProject = async () => {
-    if (!newProjectData.company || !newProjectData.unit) { alert('Proje Adı ve Ünite alanları zorunludur.'); return; }
+    if (!newProjectData.company) { alert('Proje Adı zorunludur.'); return; }
     try {
       const status = newProjectData.status;
       let progress = 0;
@@ -277,13 +280,16 @@ function Projects() {
       const createData = {
         name: newProjectData.company,
         address: newProjectData.address,
-        unit_count: 1, // unit field is used for display, backend expects unit_count
         status: status === 'Devam Ediyor' ? 'IN_PROGRESS' :
           status === 'Tamamlandı' ? 'COMPLETED' :
             status === 'Planlanıyor' ? 'PLANNING' :
-              status === 'Gecikmede' ? 'DELAYED' : 'IN_PROGRESS',
+              status === 'Gecikmede' ? 'DELAYED' :
+                status === 'Bitiyor' ? 'FINISHING' : 'PLANNING',
         description: newProjectData.description,
+        start_date: newProjectData.startDate || null,
         end_date: newProjectData.endDate || null,
+        location_lat: newProjectData.location_lat || null,
+        location_lng: newProjectData.location_lng || null,
         created_by: newProjectData.contractor_id || user.id,
         contractor_id: user.company_id
       };
@@ -312,9 +318,12 @@ function Projects() {
           status === 'Tamamlandı' ? 'COMPLETED' :
             status === 'Planlanıyor' ? 'PLANNING' :
               status === 'Gecikmede' ? 'DELAYED' :
-                status === 'Bitiyor' ? 'FINISHING' : 'IN_PROGRESS',
+                status === 'Bitiyor' ? 'FINISHING' : 'PLANNING',
         description: editFormData.description,
+        start_date: (editFormData.startDate && editFormData.startDate !== '') ? editFormData.startDate : null,
         end_date: editFormData.endDate || null,
+        location_lat: editFormData.location_lat || null,
+        location_lng: editFormData.location_lng || null,
         created_by: editFormData.contractor_id || null
       };
 
@@ -498,11 +507,7 @@ function Projects() {
                         {/* Info Grid */}
                         <div className="grid grid-cols-2 gap-4 pt-2">
                           <div className="flex items-center gap-2 text-slate-600">
-                            <div className="p-1.5 bg-slate-50 rounded-lg"><Hash size={14} className="text-slate-400" /></div>
-                            <div>
-                              <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Ünite</p>
-                              <p className="text-xs font-semibold">{proj.unit}</p>
-                            </div>
+                            {/* Ünite kaldırıldı */}
                           </div>
 
                           {visibleColumns.includes('contractor') && (

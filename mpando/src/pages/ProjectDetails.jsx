@@ -3,9 +3,11 @@ import { useParams, useNavigate } from 'react-router-dom';
 import Sidebar from '../components/Sidebar';
 import Navbar from '../components/Navbar';
 import ProjectEditModal from '../modals/ProjectEditModal';
+import BlockModal from '../modals/NewBlockModal';
 import { api } from '../api/client';
 import { useAuth } from '../context/AuthContext';
 import {
+    Plus,
     ArrowLeft,
     MapPin,
     Calendar,
@@ -21,7 +23,8 @@ import {
     Maximize,
     ChevronDown,
     ChevronUp,
-    Pencil
+    Pencil,
+    Trash2
 } from 'lucide-react';
 
 const getStatusClasses = (status) => {
@@ -67,40 +70,92 @@ const getProgressBarColor = (status) => {
     }
 };
 
-const ProjectStructure = ({ blocks, projectId, navigate }) => {
-    if (!blocks || blocks.length === 0) return null;
-
+const ProjectStructure = ({ blocks, projectId, navigate, onAddBlock, onEditBlock, onDeleteBlock }) => {
     return (
         <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 md:p-8 mt-6">
-            <h2 className="text-lg font-bold text-slate-800 mb-6 flex items-center gap-2">
-                <Building2 size={20} className="text-blue-600" />
-                Proje Yapısı (Bloklar ve Üniteler)
-            </h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {blocks.map(block => (
-                    <div
-                        key={block.id}
-                        onClick={() => navigate(`/projects/${projectId}/blocks/${block.id}`)}
-                        className="bg-slate-50 border border-slate-100 rounded-xl p-5 shadow-sm hover:shadow-md hover:border-blue-200 hover:bg-white transition-all cursor-pointer group"
-                    >
-                        <div className="flex items-center justify-between mb-4">
-                            <div className="flex items-center gap-2 font-bold text-slate-800 group-hover:text-blue-700 transition-colors">
-                                <Building2 size={24} className="text-blue-500" />
-                                {block.name}
-                            </div>
-                            <span className="text-xs font-semibold text-slate-500 bg-white px-2 py-1 rounded-md border border-slate-200 shadow-sm">
-                                {block.floor_count} Kat
-                            </span>
-                        </div>
-                        <div className="flex justify-between items-center text-sm">
-                            <span className="text-slate-500">Detayları Gör</span>
-                            <div className="w-8 h-8 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center group-hover:bg-blue-600 group-hover:text-white transition-colors">
-                                <ArrowLeft size={16} className="rotate-180" />
-                            </div>
-                        </div>
-                    </div>
-                ))}
+            <div className="flex items-center justify-between mb-6">
+                <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2">
+                    <Building2 size={20} className="text-blue-600" />
+                    Proje Yapısı (Bloklar ve Üniteler)
+                </h2>
+                <button
+                    onClick={() => onAddBlock()}
+                    className="flex items-center gap-1.5 text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 px-3 py-1.5 rounded-lg transition-colors shadow-sm"
+                >
+                    <Plus size={14} /> Yeni Blok
+                </button>
             </div>
+            {(!blocks || blocks.length === 0) ? (
+                <div className="py-8 text-center border-2 border-dashed border-slate-100 rounded-xl">
+                    <p className="text-sm text-slate-400 font-medium">Bu projeye henüz blok eklenmemiş.</p>
+                </div>
+            ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {blocks.map(block => (
+                        <div
+                            key={block.id}
+                            onClick={() => navigate(`/projects/${projectId}/blocks/${block.id}`)}
+                            className="bg-slate-50 border border-slate-100 rounded-xl p-5 shadow-sm hover:shadow-md hover:border-blue-200 hover:bg-white transition-all cursor-pointer group relative"
+                        >
+                            <div className="flex items-center justify-between mb-4">
+                                <div className="flex items-center gap-2 font-bold text-slate-800 group-hover:text-blue-700 transition-colors">
+                                    <Building2 size={24} className="text-blue-500" />
+                                    {block.name}
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <button
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            onEditBlock(block);
+                                        }}
+                                        className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                                        title="Bloku Düzenle"
+                                    >
+                                        <Pencil size={14} />
+                                    </button>
+                                    <button
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            onDeleteBlock(block.id);
+                                        }}
+                                        className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                                        title="Bloku Sil"
+                                    >
+                                        <Trash2 size={14} />
+                                    </button>
+                                </div>
+                            </div>
+                            <div className="flex justify-between items-end text-sm">
+                                <div className="flex flex-col gap-1">
+                                    <span className="text-xs font-semibold text-slate-500">
+                                        {block.floor_count} Kat
+                                    </span>
+                                    <div className="flex flex-wrap gap-2">
+                                        {block.building_type && (
+                                            <span className="text-[10px] bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded font-bold">
+                                                {block.building_type}
+                                            </span>
+                                        )}
+                                        {block.foundation_area_m2 > 0 && (
+                                            <span className="text-[10px] bg-blue-50 text-blue-600 px-1.5 py-0.5 rounded font-bold">
+                                                {block.foundation_area_m2} m²
+                                            </span>
+                                        )}
+                                        {block.elevator_count > 0 && (
+                                            <span className="text-[10px] bg-orange-50 text-orange-600 px-1.5 py-0.5 rounded font-bold">
+                                                {block.elevator_count} Asansör
+                                            </span>
+                                        )}
+                                    </div>
+                                </div>
+                                <div className="w-8 h-8 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center group-hover:bg-blue-600 group-hover:text-white transition-colors">
+                                    <ArrowLeft size={16} className="rotate-180" />
+                                </div>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            )}
         </div>
     );
 };
@@ -117,6 +172,8 @@ function ProjectDetails() {
 
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [editFormData, setEditFormData] = useState(null);
+    const [isBlockModalOpen, setIsBlockModalOpen] = useState(false);
+    const [editingBlock, setEditingBlock] = useState(null);
 
     const fetchProjectDetails = async () => {
         setLoading(true);
@@ -153,9 +210,8 @@ function ProjectDetails() {
         const initialData = {
             company: project.name || project.project_name || '',
             address: project.address || '',
-            unit: project.unit_count || 0,
             description: project.description || '',
-            contractor_id: project.created_by || '',
+            contractor_id: project.created_by?.id ?? project.created_by ?? '',
             startDate: (() => {
                 const raw = project.start_date || project.created_at;
                 if (!raw) return '';
@@ -174,7 +230,9 @@ function ProjectDetails() {
                 }
                 return String(raw).split('T')[0];
             })(),
-            status: mapStatusToTurkish(project.status)
+            status: mapStatusToTurkish(project.status),
+            location_lat: project.location_lat || '',
+            location_lng: project.location_lng || '',
         };
         setEditFormData(initialData);
         setIsEditModalOpen(true);
@@ -202,9 +260,12 @@ function ProjectDetails() {
                     status === 'Tamamlandı' ? 'COMPLETED' :
                         status === 'Planlanıyor' ? 'PLANNING' :
                             status === 'Gecikmede' ? 'DELAYED' :
-                                status === 'Bitiyor' ? 'FINISHING' : 'IN_PROGRESS',
+                                status === 'Bitiyor' ? 'FINISHING' : 'PLANNING',
                 description: editFormData.description,
+                start_date: (editFormData.startDate && editFormData.startDate !== '') ? editFormData.startDate : null,
                 end_date: editFormData.endDate || null,
+                location_lat: editFormData.location_lat || null,
+                location_lng: editFormData.location_lng || null,
                 created_by: editFormData.contractor_id || null
             };
 
@@ -214,6 +275,52 @@ function ProjectDetails() {
         } catch (err) {
             console.error("Proje güncelleme hatası:", err);
             alert("Proje güncellenirken bir hata oluştu: " + err.message);
+        }
+    };
+
+    const handleSaveBlock = async (blockData) => {
+        try {
+            if (blockData.id) {
+                // Update
+                await api.put(`/projects/blocks/${blockData.id}`, blockData);
+            } else {
+                // Create
+                await api.post(`/projects/blocks`, blockData);
+            }
+            await fetchProjectDetails();
+            setIsBlockModalOpen(false);
+            setEditingBlock(null);
+        } catch (err) {
+            console.error("Blok kaydetme hatası:", err);
+            alert("Blok kaydedilirken bir hata oluştu.");
+        }
+    };
+
+    const handleDeleteBlock = async (blockId) => {
+        if (!window.confirm("Bu bloku silmek istediğinize emin misiniz? Bu işlem geri alınamaz ve bloka ait tüm kat ve üniteler silinecektir.")) return;
+        try {
+            await api.delete(`/projects/blocks/${blockId}`);
+            await fetchProjectDetails();
+        } catch (err) {
+            console.error("Blok silme hatası:", err);
+            alert("Blok silinirken bir hata oluştu.");
+        }
+    };
+
+    const handleEditBlock = async (block) => {
+        try {
+            // Fetch detailed block data as requested
+            const response = await api.get(`/projects/blocks/${block.id}`);
+            console.log("Detailed block response:", response);
+            // Handle both wrapped and unwrapped responses
+            const detailedBlock = response.block || response.data || response;
+            setEditingBlock(detailedBlock);
+            setIsBlockModalOpen(true);
+        } catch (err) {
+            console.error("Blok detayları yüklenemedi:", err);
+            // Fallback to existing data if fetch fails
+            setEditingBlock(block);
+            setIsBlockModalOpen(true);
         }
     };
 
@@ -307,7 +414,17 @@ function ProjectDetails() {
                                         </div>
                                     </div>
                                 </div>
-                                <ProjectStructure blocks={project.blocks} projectId={id} navigate={navigate} />
+                                <ProjectStructure
+                                    blocks={project.blocks}
+                                    projectId={id}
+                                    navigate={navigate}
+                                    onAddBlock={() => {
+                                        setEditingBlock(null);
+                                        setIsBlockModalOpen(true);
+                                    }}
+                                    onEditBlock={handleEditBlock}
+                                    onDeleteBlock={handleDeleteBlock}
+                                />
                             </div>
 
                             {/* Details Grid */}
@@ -365,14 +482,7 @@ function ProjectDetails() {
                                         </h3>
 
                                         <ul className="space-y-4">
-                                            <li className="flex items-center justify-between pb-4 border-b border-slate-50 last:border-0 last:pb-0">
-                                                <div className="flex items-center gap-2 text-slate-500 font-medium text-sm">
-                                                    <Hash size={16} /> <span>Ünite Sayısı</span>
-                                                </div>
-                                                <span className="font-bold text-slate-800 bg-slate-100 px-3 py-1 rounded-lg">
-                                                    {project.total_units ?? project.unit_count ?? '-'}
-                                                </span>
-                                            </li>
+                                            {/* Ünite Sayısı kaldırıldı */}
                                             <li className="flex flex-col gap-2 pb-4 border-b border-slate-50 last:border-0 last:pb-0">
                                                 <div className="flex items-center gap-2 text-slate-500 font-medium text-sm">
                                                     <Users size={16} /> <span>Proje Sorumlusu</span>
@@ -418,6 +528,17 @@ function ProjectDetails() {
                     onClose={closeEditModal}
                     onChange={handleEditFormChange}
                     onSave={handleUpdateProject}
+                />
+
+                <BlockModal
+                    isOpen={isBlockModalOpen}
+                    onClose={() => {
+                        setIsBlockModalOpen(false);
+                        setEditingBlock(null);
+                    }}
+                    onSave={handleSaveBlock}
+                    projectId={id}
+                    blockData={editingBlock}
                 />
             </main>
         </div>

@@ -26,14 +26,14 @@ const NewProjectModal = ({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-in fade-in duration-200">
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden border border-slate-100 flex flex-col max-h-[90vh]">
-        
+
         {/* --- Header --- */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-white sticky top-0 z-10">
           <div>
             <h2 className="text-lg font-bold text-slate-800">Yeni Proje Ekle</h2>
             <p className="text-xs text-slate-500 mt-0.5">Sisteme yeni bir proje veya şantiye kaydı oluşturun.</p>
           </div>
-          <button 
+          <button
             type="button"
             onClick={onClose}
             className="p-2 hover:bg-slate-100 rounded-full text-slate-400 hover:text-slate-600 transition-colors"
@@ -44,19 +44,19 @@ const NewProjectModal = ({
 
         {/* --- Form Body (Scrollable) --- */}
         <div className="p-6 overflow-y-auto custom-scrollbar">
-          <form 
-            id="new-project-form" 
-            onSubmit={(e) => { e.preventDefault(); onAdd(); }} 
+          <form
+            id="new-project-form"
+            onSubmit={(e) => { e.preventDefault(); onAdd(); }}
             className="space-y-6"
           >
-            
+
             {/* Bölüm 1: Proje Temel Bilgileri */}
             <div>
               <h3 className="text-xs font-bold text-blue-600 uppercase tracking-wider mb-3 flex items-center gap-2">
                 <Building2 size={14} /> Proje Temel Bilgileri
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                
+
                 {/* Proje Adı */}
                 <div className="space-y-1.5">
                   <label className="text-sm font-medium text-slate-700">Proje Adı <span className="text-red-500">*</span></label>
@@ -101,24 +101,6 @@ const NewProjectModal = ({
                   </div>
                 </div>
 
-                {/* Ünite Sayısı */}
-                <div className="space-y-1.5">
-                  <label className="text-sm font-medium text-slate-700">Ünite Sayısı</label>
-                  <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
-                      <Home size={16} />
-                    </div>
-                    <input
-                      type="number"
-                      name="unit"
-                      value={formData.unit || ''}
-                      onChange={onChange}
-                      placeholder="Örn: 48"
-                      className="block w-full pl-10 pr-3 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-100 focus:border-blue-400 outline-none transition-all text-sm placeholder:text-slate-400 font-medium"
-                    />
-                  </div>
-                </div>
-
                 {/* Durumu */}
                 <div className="space-y-1.5">
                   <label className="text-sm font-medium text-slate-700">Proje Durumu</label>
@@ -153,7 +135,7 @@ const NewProjectModal = ({
                 <Calendar size={14} /> Tarih & Konum
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                
+
                 {/* Başlangıç Tarihi */}
                 <div className="space-y-1.5">
                   <label className="text-sm font-medium text-slate-700">Başlangıç Tarihi</label>
@@ -195,7 +177,37 @@ const NewProjectModal = ({
 
                 {/* Adres */}
                 <div className="space-y-1.5 md:col-span-2">
-                  <label className="text-sm font-medium text-slate-700">Proje Adresi</label>
+                  <div className="flex justify-between items-center">
+                    <label className="text-sm font-medium text-slate-700">Proje Adresi</label>
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        if (!formData.address) return alert("Lütfen önce bir adres girin.");
+                        try {
+                          const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(formData.address)}`, {
+                            headers: {
+                              'User-Agent': 'MpandoApp/1.0'
+                            }
+                          });
+                          const data = await res.json();
+                          if (data && data.length > 0) {
+                            const lat = data[0].lat;
+                            const lon = data[0].lon;
+                            onChange({ target: { name: 'location_lat', value: lat } });
+                            onChange({ target: { name: 'location_lng', value: lon } });
+                          } else {
+                            alert("Adres bulunamadı. Lütfen daha genel bir adres (İl, İlçe) girmeyi deneyin.");
+                          }
+                        } catch (err) {
+                          console.error("Geocoding hatası:", err);
+                          alert("Konum servisine bağlanılamadı.");
+                        }
+                      }}
+                      className="text-[11px] font-bold text-blue-600 hover:text-blue-700 transition-colors flex items-center gap-1"
+                    >
+                      <MapPin size={12} /> Koordinatları Bul
+                    </button>
+                  </div>
                   <div className="relative">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
                       <MapPin size={16} />
@@ -209,6 +221,30 @@ const NewProjectModal = ({
                       className="block w-full pl-10 pr-3 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-100 focus:border-blue-400 outline-none transition-all text-sm placeholder:text-slate-400"
                     />
                   </div>
+                </div>
+
+                {/* Koordinatlar */}
+                <div className="space-y-1.5">
+                  <label className="text-sm font-medium text-slate-700">Enlem (Latitude)</label>
+                  <input
+                    type="text"
+                    name="location_lat"
+                    value={formData.location_lat || ''}
+                    onChange={onChange}
+                    placeholder="Örn: 41.0082"
+                    className="block w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-100 focus:border-blue-400 outline-none transition-all text-sm"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-sm font-medium text-slate-700">Boylam (Longitude)</label>
+                  <input
+                    type="text"
+                    name="location_lng"
+                    value={formData.location_lng || ''}
+                    onChange={onChange}
+                    placeholder="Örn: 28.9784"
+                    className="block w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-100 focus:border-blue-400 outline-none transition-all text-sm"
+                  />
                 </div>
 
               </div>

@@ -27,7 +27,7 @@ const ProjectEditModal = ({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-in fade-in duration-200">
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden border border-slate-100 flex flex-col max-h-[90vh]">
-        
+
         {/* --- Header --- */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-white sticky top-0 z-10">
           <div>
@@ -36,7 +36,7 @@ const ProjectEditModal = ({
               {projectData.id ? `#${projectData.id} numaralı` : 'Seçili'} proje kaydını güncelliyorsunuz.
             </p>
           </div>
-          <button 
+          <button
             type="button"
             onClick={onClose}
             className="p-2 hover:bg-slate-100 rounded-full text-slate-400 hover:text-slate-600 transition-colors"
@@ -47,19 +47,19 @@ const ProjectEditModal = ({
 
         {/* --- Form Body (Scrollable) --- */}
         <div className="p-6 overflow-y-auto custom-scrollbar">
-          <form 
-            id="edit-project-form" 
-            onSubmit={(e) => { e.preventDefault(); onSave(); }} 
+          <form
+            id="edit-project-form"
+            onSubmit={(e) => { e.preventDefault(); onSave(); }}
             className="space-y-6"
           >
-            
+
             {/* Bölüm 1: Proje Temel Bilgileri */}
             <div>
               <h3 className="text-xs font-bold text-blue-600 uppercase tracking-wider mb-3 flex items-center gap-2">
                 <Building2 size={14} /> Proje Temel Bilgileri
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                
+
                 {/* Proje Adı */}
                 <div className="space-y-1.5">
                   <label className="text-sm font-medium text-slate-700">Proje Adı</label>
@@ -86,7 +86,7 @@ const ProjectEditModal = ({
                     </div>
                     <select
                       name="contractor_id"
-                      value={projectData.contractor_id || ''}
+                      value={projectData.contractor_id ?? ''}
                       onChange={onChange}
                       className="block w-full pl-10 pr-10 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-100 focus:border-blue-400 outline-none transition-all text-sm text-slate-700 appearance-none cursor-pointer"
                     >
@@ -98,23 +98,6 @@ const ProjectEditModal = ({
                       ))}
                     </select>
                     <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
-                  </div>
-                </div>
-
-                {/* Ünite Sayısı */}
-                <div className="space-y-1.5">
-                  <label className="text-sm font-medium text-slate-700">Ünite Sayısı</label>
-                  <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
-                      <Home size={16} />
-                    </div>
-                    <input
-                      type="number"
-                      name="unit"
-                      value={projectData.unit || ''}
-                      onChange={onChange}
-                      className="block w-full pl-10 pr-3 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-100 focus:border-blue-400 outline-none transition-all text-sm font-medium"
-                    />
                   </div>
                 </div>
 
@@ -152,7 +135,7 @@ const ProjectEditModal = ({
                 <Calendar size={14} /> Tarih & Konum
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                
+
                 {/* Başlangıç Tarihi */}
                 <div className="space-y-1.5">
                   <label className="text-sm font-medium text-slate-700">Başlangıç Tarihi</label>
@@ -193,7 +176,37 @@ const ProjectEditModal = ({
 
                 {/* Adres */}
                 <div className="space-y-1.5 md:col-span-2">
-                  <label className="text-sm font-medium text-slate-700">Proje Adresi</label>
+                  <div className="flex justify-between items-center">
+                    <label className="text-sm font-medium text-slate-700">Proje Adresi</label>
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        if (!projectData.address) return alert("Lütfen önce bir adres girin.");
+                        try {
+                          const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(projectData.address)}`, {
+                            headers: {
+                              'User-Agent': 'MpandoApp/1.0'
+                            }
+                          });
+                          const data = await res.json();
+                          if (data && data.length > 0) {
+                            const lat = data[0].lat;
+                            const lon = data[0].lon;
+                            onChange({ target: { name: 'location_lat', value: lat } });
+                            onChange({ target: { name: 'location_lng', value: lon } });
+                          } else {
+                            alert("Adres bulunamadı. Lütfen daha genel bir adres (İl, İlçe) girmeyi deneyin.");
+                          }
+                        } catch (err) {
+                          console.error("Geocoding hatası:", err);
+                          alert("Konum servisine bağlanılamadı.");
+                        }
+                      }}
+                      className="text-[11px] font-bold text-blue-600 hover:text-blue-700 transition-colors flex items-center gap-1"
+                    >
+                      <MapPin size={12} /> Koordinatları Bul
+                    </button>
+                  </div>
                   <div className="relative">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
                       <MapPin size={16} />
@@ -206,6 +219,30 @@ const ProjectEditModal = ({
                       className="block w-full pl-10 pr-3 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-100 focus:border-blue-400 outline-none transition-all text-sm"
                     />
                   </div>
+                </div>
+
+                {/* Koordinatlar */}
+                <div className="space-y-1.5">
+                  <label className="text-sm font-medium text-slate-700">Enlem (Latitude)</label>
+                  <input
+                    type="text"
+                    name="location_lat"
+                    value={projectData.location_lat || ''}
+                    onChange={onChange}
+                    placeholder="Örn: 41.0082"
+                    className="block w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-100 focus:border-blue-400 outline-none transition-all text-sm"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-sm font-medium text-slate-700">Boylam (Longitude)</label>
+                  <input
+                    type="text"
+                    name="location_lng"
+                    value={projectData.location_lng || ''}
+                    onChange={onChange}
+                    placeholder="Örn: 28.9784"
+                    className="block w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-100 focus:border-blue-400 outline-none transition-all text-sm"
+                  />
                 </div>
 
               </div>
