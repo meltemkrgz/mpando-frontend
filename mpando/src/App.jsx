@@ -9,6 +9,7 @@ import BlockDetails from "./pages/BlockDetails";
 import Customers from "./pages/Customers";
 import Sales from "./pages/Sales";
 import SecondHandListings from "./pages/SecondHandListings";
+import Messages from "./pages/Messages";
 
 function App() {
   return (
@@ -75,6 +76,14 @@ function App() {
           element={
             <PrivateRoute>
               <SecondHandListings />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/messages"
+          element={
+            <PrivateRoute>
+              <Messages />
             </PrivateRoute>
           }
         />
