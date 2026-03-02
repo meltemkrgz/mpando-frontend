@@ -25,9 +25,9 @@ import {
     Compass,
     FileText
 } from 'lucide-react';
-import NewFloorModal from '../modals/NewFloorModal';
-import NewUnitModal from '../modals/NewUnitModal';
-import NewRoomModal from '../modals/NewRoomModal';
+import NewFloorModal from '../modals/blocks/NewFloorModal';
+import NewUnitModal from '../modals/units/NewUnitModal';
+import NewRoomModal from '../modals/units/NewRoomModal';
 
 const getUnitStatusDetails = (status) => {
     switch (String(status).toUpperCase()) {

@@ -2,9 +2,9 @@ import React, { useState, useRef, useEffect } from 'react';
 import Sidebar from '../components/Sidebar';
 import Navbar from '../components/Navbar';
 import { useAuth } from '../context/AuthContext';
-import NewSecondHandModal from '../modals/NewSecondHandModal'; 
-import SecondHandEditModal from '../modals/SecondHandEditModal'; 
-import SecondHandDetailsModal from '../modals/SecondHandDetailsModal';
+import NewSecondHandModal from '../modals/secondhand/NewSecondHandModal';
+import SecondHandEditModal from '../modals/secondhand/SecondHandEditModal';
+import SecondHandDetailsModal from '../modals/secondhand/SecondHandDetailsModal';
 
 import {
   Plus,
@@ -55,49 +55,49 @@ const getTypeIcon = (type) => {
 
 // --- Örnek Veriler ---
 const initialListings = [
-  { 
-    id: 1, 
-    projectName: 'Güneş Sitesi 3. Etap', 
+  {
+    id: 1,
+    projectName: 'Güneş Sitesi 3. Etap',
     location: 'Kadıköy, İstanbul',
-    agentName: 'Canan Yılmaz', 
-    block: 'C Blok', 
-    flat: 'No: 4', 
-    ownerName: 'Ali Vural', 
+    agentName: 'Canan Yılmaz',
+    block: 'C Blok',
+    flat: 'No: 4',
+    ownerName: 'Ali Vural',
     ownerPhone: '+90 532 111 22 33',
-    status: 'Aktif', 
+    status: 'Aktif',
     type: 'Daire',
     price: '5.250.000₺',
     createdAt: '01.03.2024',
     notes: 'Krediye uygun, hemen taşınılabilir.'
   },
-  { 
-    id: 2, 
-    projectName: 'Deniz Manzaralı Müstakil', 
+  {
+    id: 2,
+    projectName: 'Deniz Manzaralı Müstakil',
     location: 'Bodrum, Muğla',
-    agentName: 'Burak Demir', 
-    block: '-', 
-    flat: 'No: 12', 
-    ownerName: 'Ayşe Kaya', 
+    agentName: 'Burak Demir',
+    block: '-',
+    flat: 'No: 12',
+    ownerName: 'Ayşe Kaya',
     ownerPhone: '+90 555 444 55 66',
-    status: 'Pasif', 
+    status: 'Pasif',
     type: 'Villa',
     price: '18.000.000₺',
     createdAt: '15.02.2024',
     notes: 'Tadilat masrafı fiyattan düşülecek.'
   },
-  { 
-    id: 3, 
-    projectName: 'Merkezde Ticari İmarlı', 
+  {
+    id: 3,
+    projectName: 'Merkezde Ticari İmarlı',
     location: 'Çankaya, Ankara',
-    agentName: 'Mehmet Öztürk', 
-    block: 'Ada 101', 
-    flat: 'Parsel 5', 
-    ownerName: 'Şirket Envanteri', 
+    agentName: 'Mehmet Öztürk',
+    block: 'Ada 101',
+    flat: 'Parsel 5',
+    ownerName: 'Şirket Envanteri',
     ownerPhone: '-',
-    status: 'Pasif', 
+    status: 'Pasif',
     type: 'Arsa',
     price: '9.500.000₺',
-    createdAt: '10.01.2024' 
+    createdAt: '10.01.2024'
   },
 ];
 
@@ -117,13 +117,13 @@ function SectionHeader({ title, action }) {
 
 function SecondHandListings() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [listings, setListings] = useState(initialListings); 
+  const [listings, setListings] = useState(initialListings);
   const [selectedListings, setSelectedListings] = useState([]);
   const { user } = useAuth();
 
   // --- MODAL STATES ---
   const [isAddModalOpen, setIsAddModalOpen] = useState(false); // 1. New Modal State
-  
+
   const [isEditModalOpen, setIsEditModalOpen] = useState(false); // 2. Edit Modal State
   const [selectedListingForEdit, setSelectedListingForEdit] = useState(null);
 
@@ -177,10 +177,10 @@ function SecondHandListings() {
     );
     setIsEditModalOpen(false);
     setSelectedListingForEdit(null);
-    
+
     // Eğer detay modalı açıksa, oradaki veriyi de anlık güncelle
-    if(selectedListingForDetails && selectedListingForDetails.id === updatedData.id) {
-       setSelectedListingForDetails(updatedData);
+    if (selectedListingForDetails && selectedListingForDetails.id === updatedData.id) {
+      setSelectedListingForDetails(updatedData);
     }
   };
 
@@ -221,10 +221,10 @@ function SecondHandListings() {
 
   // --- Modal Açma Yardımcıları ---
   const openAddModal = () => setIsAddModalOpen(true);
-  
-  const openEditModal = (listing) => { 
-    setSelectedListingForEdit(listing); 
-    setIsEditModalOpen(true); 
+
+  const openEditModal = (listing) => {
+    setSelectedListingForEdit(listing);
+    setIsEditModalOpen(true);
   };
 
   const openDetailsModal = (listing) => {
@@ -289,11 +289,11 @@ function SecondHandListings() {
                         <p className="text-xs font-semibold text-slate-400 px-2 pt-1 pb-2">Gösterilecek Sütunlar</p>
                         {optionalColumns.map(col => (
                           <label key={col.key} className="flex items-center gap-2 px-2 py-1.5 rounded-md hover:bg-slate-50 cursor-pointer">
-                            <input 
-                              type="checkbox" 
-                              checked={visibleColumns.includes(col.key)} 
-                              onChange={() => toggleColumnVisibility(col.key)} 
-                              className="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer accent-blue-600" 
+                            <input
+                              type="checkbox"
+                              checked={visibleColumns.includes(col.key)}
+                              onChange={() => toggleColumnVisibility(col.key)}
+                              className="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer accent-blue-600"
                             />
                             <span className="text-sm text-slate-700">{col.label}</span>
                           </label>
@@ -357,39 +357,39 @@ function SecondHandListings() {
                     </tr>
                   ) : (
                     filteredListings.map(item => (
-                      <tr 
-                        key={item.id} 
+                      <tr
+                        key={item.id}
                         // --- SATIRA TIKLANINCA DETAY MODALI AÇILIR ---
                         onClick={() => openDetailsModal(item)}
                         className={`group transition-colors border-b border-slate-50 last:border-none cursor-pointer ${selectedListings.includes(item.id) ? 'bg-blue-50/50' : 'hover:bg-slate-50'}`}
                       >
                         <td className="py-4 pl-2 align-top pt-5" onClick={(e) => e.stopPropagation()}>
-                          <input 
-                            type="checkbox" 
-                            checked={selectedListings.includes(item.id)} 
-                            onChange={() => handleSelectListing(item.id)} 
-                            className="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer accent-blue-600" 
+                          <input
+                            type="checkbox"
+                            checked={selectedListings.includes(item.id)}
+                            onChange={() => handleSelectListing(item.id)}
+                            className="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer accent-blue-600"
                           />
                         </td>
-                        
+
                         <td className="py-4 px-4 align-top">
                           <div className="flex flex-col gap-1">
                             <span className="font-semibold text-slate-700 group-hover:text-blue-600 transition-colors">{item.projectName}</span>
                             <span className="text-xs text-slate-400 flex items-center gap-1">
-                               İlan No: #{1000 + item.id}
+                              İlan No: #{1000 + item.id}
                             </span>
                           </div>
                         </td>
 
                         <td className="py-4 px-4 align-top pt-5">
-                            <span className="flex items-center gap-1.5 text-slate-700">
-                              <User size={14} className="text-slate-400"/> {item.agentName}
-                            </span>
+                          <span className="flex items-center gap-1.5 text-slate-700">
+                            <User size={14} className="text-slate-400" /> {item.agentName}
+                          </span>
                         </td>
 
                         <td className="py-4 px-4 align-top pt-5">
                           <span className="text-sm text-slate-600 bg-slate-100 px-2 py-1 rounded-md inline-block w-max border border-slate-200">
-                             {item.block} / {item.flat}
+                            {item.block} / {item.flat}
                           </span>
                         </td>
 
@@ -415,21 +415,21 @@ function SecondHandListings() {
                         </td>
 
                         {visibleColumns.includes('price') && (
-                            <td className="py-4 px-4 align-top pt-5 font-bold text-slate-700">
-                                {item.price}
-                            </td>
+                          <td className="py-4 px-4 align-top pt-5 font-bold text-slate-700">
+                            {item.price}
+                          </td>
                         )}
                         {visibleColumns.includes('location') && (
-                            <td className="py-4 px-4 align-top pt-5 text-slate-500">
-                                {item.location}
-                            </td>
+                          <td className="py-4 px-4 align-top pt-5 text-slate-500">
+                            {item.location}
+                          </td>
                         )}
                         {visibleColumns.includes('createdAt') && (
-                            <td className="py-4 px-4 align-top pt-5 text-slate-500">
-                                {item.createdAt}
-                            </td>
+                          <td className="py-4 px-4 align-top pt-5 text-slate-500">
+                            {item.createdAt}
+                          </td>
                         )}
-                        
+
                         {/* İşlemler Butonu - Edit Modalını Açar */}
                         <td className="py-4 px-4 text-center align-top pt-4" onClick={(e) => e.stopPropagation()}>
                           <button onClick={() => openEditModal(item)} className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 text-sm font-medium text-slate-600 bg-white border border-slate-200 hover:text-blue-600 hover:border-blue-200 hover:bg-blue-50 rounded-lg transition-all shadow-sm">
@@ -466,9 +466,9 @@ function SecondHandListings() {
           data={selectedListingForDetails}
           onClose={() => setIsDetailsModalOpen(false)}
           onEdit={(listing) => {
-             // Detayı kapat, Düzenleyi aç
-             setIsDetailsModalOpen(false);
-             openEditModal(listing);
+            // Detayı kapat, Düzenleyi aç
+            setIsDetailsModalOpen(false);
+            openEditModal(listing);
           }}
         />
 

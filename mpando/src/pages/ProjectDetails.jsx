@@ -2,8 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Sidebar from '../components/Sidebar';
 import Navbar from '../components/Navbar';
-import ProjectEditModal from '../modals/ProjectEditModal';
-import BlockModal from '../modals/NewBlockModal';
+import ProjectEditModal from '../modals/projects/ProjectEditModal';
+import BlockModal from '../modals/blocks/NewBlockModal';
 import { api } from '../api/client';
 import { useAuth } from '../context/AuthContext';
 import {

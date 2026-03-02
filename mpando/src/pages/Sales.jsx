@@ -1,9 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react';
 import Sidebar from '../components/Sidebar';
 import Navbar from '../components/Navbar';
-import SaleEditModal from '../modals/SaleEditModal';
-import NewSaleModal from '../modals/NewSaleModal';
-import SaleDetailsModal from '../modals/SaleDetailsModal';
+import SaleEditModal from '../modals/sales/SaleEditModal';
+import NewSaleModal from '../modals/sales/NewSaleModal';
+import SaleDetailsModal from '../modals/sales/SaleDetailsModal';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../api/client';
 import {
@@ -425,9 +425,9 @@ function Sales() {
                     </tr>
                   ) : (
                     filteredSales.map(sale => (
-                      <tr 
-                        key={sale.id} 
-                        onClick={() => openDetailsModal(sale)} 
+                      <tr
+                        key={sale.id}
+                        onClick={() => openDetailsModal(sale)}
                         className={`group transition-colors border-b border-slate-50 last:border-none cursor-pointer ${selectedSales.includes(sale.id) ? 'bg-blue-50/50' : 'hover:bg-slate-50'}`}
                       >
                         <td className="py-4 pl-2 align-top pt-5" onClick={(e) => e.stopPropagation()}>
@@ -536,11 +536,11 @@ function Sales() {
 
                         {/* İşlemler */}
                         <td className="py-4 px-4 text-center align-top pt-4">
-                          <button 
+                          <button
                             onClick={(e) => {
                               e.stopPropagation();
                               openEditModal(sale);
-                            }} 
+                            }}
                             className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 text-sm font-medium text-slate-600 bg-white border border-slate-200 hover:text-blue-600 hover:border-blue-200 hover:bg-blue-50 rounded-lg transition-all shadow-sm"
                           >
                             <Pencil size={14} /> Düzenle

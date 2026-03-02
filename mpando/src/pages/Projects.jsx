@@ -3,8 +3,8 @@ import { useNavigate } from 'react-router-dom';
 
 import Sidebar from '../components/Sidebar';
 import Navbar from '../components/Navbar';
-import ProjectEditModal from '../modals/ProjectEditModal';
-import NewProjectModal from '../modals/NewProjectModal'; // Yeni import
+import ProjectEditModal from '../modals/projects/ProjectEditModal';
+import NewProjectModal from '../modals/projects/NewProjectModal'; // Yeni import
 import { api } from '../api/client';
 import { useAuth } from '../context/AuthContext';
 import {
