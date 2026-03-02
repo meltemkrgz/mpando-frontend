@@ -3,6 +3,7 @@ import Sidebar from '../components/Sidebar';
 import Navbar from '../components/Navbar';
 import SaleEditModal from '../modals/SaleEditModal';
 import NewSaleModal from '../modals/NewSaleModal';
+import SaleDetailsModal from '../modals/SaleDetailsModal';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../api/client';
 import {
@@ -19,7 +20,6 @@ import {
   Building2,
   Banknote,
   FileText,
-  ExternalLink,
   Eye,
   Download
 } from 'lucide-react';
@@ -44,55 +44,6 @@ const getStatusIcon = (status) => {
     default: return null;
   }
 };
-
-// --- Örnek Veriler ---
-const initialSalesList = [
-  {
-    id: 1,
-    customerName: 'Ahmet Yılmaz',
-    customerPhone: '+90 532 123 45 67',
-    projectName: 'AKSU Rezidans',
-    block: 'A',
-    flat: '12',
-    status: 'Satıldı',
-    budgetRange: '3.000.000₺ - 4.500.000₺',
-    notes: 'Peşinat ödendi, kredi süreci tamamlandı.',
-    offerAmount: '4.200.000₺',
-    saleDate: '15.03.2024',
-    contractNo: 'S-2024-001',
-    createdAt: '01.03.2024'
-  },
-  {
-    id: 2,
-    customerName: 'Ayşe Demir',
-    customerPhone: '+90 555 987 65 43',
-    projectName: 'Dolunay Yaşam Merkezi',
-    block: 'B',
-    flat: '8',
-    status: 'Beklemede',
-    budgetRange: '5.000.000₺ - 6.000.000₺',
-    notes: 'Eşinin kararını bekliyor, haftaya dönüş yapacak.',
-    offerAmount: '5.800.000₺',
-    saleDate: '-',
-    contractNo: '-',
-    createdAt: '10.04.2024'
-  },
-  {
-    id: 3,
-    customerName: 'Mehmet Kaya',
-    customerPhone: '+90 530 456 78 90',
-    projectName: 'İŞHAN Rezidans',
-    block: 'C',
-    flat: '22',
-    status: 'Reddedildi',
-    budgetRange: '2.000.000₺ - 2.500.000₺',
-    notes: 'Bütçeyi aştığı için vazgeçti.',
-    offerAmount: '3.100.000₺',
-    saleDate: '-',
-    contractNo: '-',
-    createdAt: '05.02.2024'
-  },
-];
 
 const initialNewSaleData = {
   proje_id: '', musteri_id: '', unit_id: '', interested_product: '',
@@ -133,6 +84,10 @@ function Sales() {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [selectedSaleForEdit, setSelectedSaleForEdit] = useState(null);
   const [editFormData, setEditFormData] = useState(null);
+
+  // Satış Detay Modalı State'leri
+  const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
+  const [selectedSaleForDetails, setSelectedSaleForDetails] = useState(null);
 
   const [isColumnDropdownOpen, setIsColumnDropdownOpen] = useState(false);
   const [visibleColumns, setVisibleColumns] = useState(['contract_no']);
@@ -313,6 +268,16 @@ function Sales() {
     }
   };
 
+  // Detay Modalı İşlemleri
+  const openDetailsModal = (sale) => {
+    setSelectedSaleForDetails(sale);
+    setIsDetailsModalOpen(true);
+  };
+  const closeDetailsModal = () => {
+    setIsDetailsModalOpen(false);
+    setTimeout(() => setSelectedSaleForDetails(null), 300);
+  };
+
   const toggleFilterDropdown = () => setIsFilterDropdownOpen(prev => !prev);
   const handleFilterChange = (status) => {
     setSelectedStatusFilter(status);
@@ -460,12 +425,19 @@ function Sales() {
                     </tr>
                   ) : (
                     filteredSales.map(sale => (
-                      <tr key={sale.id} className={`group transition-colors border-b border-slate-50 last:border-none ${selectedSales.includes(sale.id) ? 'bg-blue-50/50' : 'hover:bg-slate-50'}`}>
-                        <td className="py-4 pl-2 align-top pt-5">
+                      <tr 
+                        key={sale.id} 
+                        onClick={() => openDetailsModal(sale)} 
+                        className={`group transition-colors border-b border-slate-50 last:border-none cursor-pointer ${selectedSales.includes(sale.id) ? 'bg-blue-50/50' : 'hover:bg-slate-50'}`}
+                      >
+                        <td className="py-4 pl-2 align-top pt-5" onClick={(e) => e.stopPropagation()}>
                           <input
                             type="checkbox"
                             checked={selectedSales.includes(sale.id)}
-                            onChange={() => handleSelectSale(sale.id)}
+                            onChange={(e) => {
+                              e.stopPropagation();
+                              handleSelectSale(sale.id);
+                            }}
                             className="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer accent-blue-600"
                           />
                         </td>
@@ -524,6 +496,7 @@ function Sales() {
                                     href={sale.contract_file || sale.units?.contract_file}
                                     target="_blank"
                                     rel="noopener noreferrer"
+                                    onClick={(e) => e.stopPropagation()}
                                     className="p-1 text-blue-500 hover:bg-blue-50 rounded transition-all"
                                     title="Sözleşmeyi Görüntüle"
                                   >
@@ -532,6 +505,7 @@ function Sales() {
                                   <a
                                     href={sale.contract_file || sale.units?.contract_file}
                                     download
+                                    onClick={(e) => e.stopPropagation()}
                                     className="p-1 text-slate-400 hover:bg-slate-50 rounded transition-all"
                                     title="Sözleşmeyi İndir"
                                   >
@@ -550,6 +524,7 @@ function Sales() {
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 download
+                                onClick={(e) => e.stopPropagation()}
                                 className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-blue-50 text-blue-600 text-xs font-medium hover:bg-blue-100 transition-colors"
                               >
                                 <FileText size={14} /> İndir
@@ -561,7 +536,13 @@ function Sales() {
 
                         {/* İşlemler */}
                         <td className="py-4 px-4 text-center align-top pt-4">
-                          <button onClick={() => openEditModal(sale)} className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 text-sm font-medium text-slate-600 bg-white border border-slate-200 hover:text-blue-600 hover:border-blue-200 hover:bg-blue-50 rounded-lg transition-all shadow-sm">
+                          <button 
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              openEditModal(sale);
+                            }} 
+                            className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 text-sm font-medium text-slate-600 bg-white border border-slate-200 hover:text-blue-600 hover:border-blue-200 hover:bg-blue-50 rounded-lg transition-all shadow-sm"
+                          >
                             <Pencil size={14} /> Düzenle
                           </button>
                         </td>
@@ -575,6 +556,13 @@ function Sales() {
         </div>
 
         {/* --- MODALLAR --- */}
+        <SaleDetailsModal
+          isOpen={isDetailsModalOpen}
+          data={selectedSaleForDetails}
+          onClose={closeDetailsModal}
+          onEdit={openEditModal}
+        />
+
         <SaleEditModal
           isOpen={isEditModalOpen}
           saleData={editFormData}
