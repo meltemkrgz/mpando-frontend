@@ -1,6 +1,7 @@
-import React, { useState, useRef, useEffect, useMemo } from 'react'; // useMemo import edildi
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import Sidebar from '../components/Sidebar';
 import Navbar from '../components/Navbar';
+import DataTable from '../components/DataTable';
 import NewCostumerModal from '../modals/customers/NewCostumerModal';
 import CustomerEditModal from '../modals/customers/CostumerEditModal';
 import { useAuth } from "../context/AuthContext";
@@ -10,13 +11,16 @@ import {
   Trash2,
   CheckSquare,
   Pencil,
-  X,
-  Columns,
   Filter,
-  CheckCircle
+  CheckCircle,
+  Users,
+  UserPlus,
+  UserX,
+  Phone,
+  Mail,
+  MapPin
 } from 'lucide-react';
 
-// --- Yardımcı Fonksiyonlar ---
 const getCompanyNameById = (companyId, companies) => {
   const company = (companies || []).find(c => String(c.id) === String(companyId));
   return company ? company.name : 'Bilinmiyor';
@@ -26,69 +30,6 @@ const getEmployeeNameById = (employeeId, employees) => {
   const employee = (employees || []).find(e => String(e.id) === String(employeeId));
   return employee ? (employee.full_name || employee.name) : 'Bilinmiyor';
 };
-
-const initialCustomerList = [
-  {
-    id: 1,
-    company_id: 1,
-    employee_id: 101,
-    customer_full_name: 'Ayşe Kaya',
-    identity_number: '12345678901',
-    phone: '5321234567',
-    email: 'ayse.kaya@example.com',
-    address: '',
-    created_at: '01.01.2024',
-    is_deleted: false,
-  },
-  {
-    id: 2,
-    company_id: 2,
-    employee_id: 102,
-    customer_full_name: 'Mehmet Demir',
-    identity_number: '98765432109',
-    phone: '5439876543',
-    email: 'mehmet.demir@example.com',
-    address: '',
-    created_at: '15.03.2024',
-    is_deleted: false,
-  },
-  {
-    id: 3,
-    company_id: 1,
-    employee_id: 101,
-    customer_full_name: 'Zeynep Aksoy',
-    identity_number: '11223344556',
-    phone: '5541122334',
-    email: 'zeynep.aksoy@example.com',
-    address: '',
-    created_at: '10.02.2024',
-    is_deleted: false,
-  },
-  {
-    id: 4,
-    company_id: 3,
-    employee_id: 103,
-    customer_full_name: 'Can Yılmaz',
-    identity_number: '66778899001',
-    phone: '5056677889',
-    email: 'can.yilmaz@example.com',
-    address: '',
-    created_at: '20.06.2023',
-    is_deleted: true,
-  },
-  {
-    id: 5,
-    company_id: 4,
-    employee_id: 104,
-    customer_full_name: 'Elif Kaya',
-    identity_number: '10293847561',
-    phone: '5061234567',
-    email: 'elif.kaya@example.com',
-    address: '',
-    created_at: '05.04.2024',
-    is_deleted: false,
-  },
-];
 
 const initialNewCustomerData = {
   company_id: '',
@@ -101,21 +42,7 @@ const initialNewCustomerData = {
   is_deleted: false,
 };
 
-const optionalColumns = [
-  { key: 'identity_number', label: 'Kimlik No' },
-  { key: 'email', label: 'E-posta' },
-  { key: 'address', label: 'Adres' },
-  { key: 'created_at', label: 'Oluşturulma Tarihi' },
-];
-
-function SectionHeader({ title, action }) {
-  return (
-    <div className="flex items-center justify-between mb-6">
-      <h2 className="text-lg font-bold text-slate-800">{title}</h2>
-      <div className="flex flex-wrap items-center gap-2">{action}</div>
-    </div>
-  );
-}
+const customerFilterOptions = ['Tümü', 'Varolan Kayıtlar', 'Silinmiş Kayıtlar'];
 
 function Customers() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -132,16 +59,10 @@ function Customers() {
   const [selectedCustomerForEdit, setSelectedCustomerForEdit] = useState(null);
   const [editFormData, setEditFormData] = useState(null);
 
-  const [isColumnDropdownOpen, setIsColumnDropdownOpen] = useState(false);
-  const [visibleColumns, setVisibleColumns] = useState([]);
-  const columnDropdownRef = useRef(null);
-
   const [isFilterDropdownOpen, setIsFilterDropdownOpen] = useState(false);
-  const [selectedFilterOption, setSelectedFilterOption] = useState('Varolan Kayıtlar'); // Varsayılan: Varolan Kayıtlar
+  const [selectedFilterOption, setSelectedFilterOption] = useState('Varolan Kayıtlar');
   const [loading, setLoading] = useState(true);
   const filterDropdownRef = useRef(null);
-
-  const customerFilterOptions = ['Tümü', 'Varolan Kayıtlar', 'Silinmiş Kayıtlar'];
 
   const fetchData = async () => {
     setLoading(true);
@@ -153,9 +74,6 @@ function Customers() {
           api.get('/users')
         ]);
 
-        console.log("Fetched Customers Raw Data:", customersData);
-
-        // Filter companies and users for the current company
         const filteredCompanies = (companiesData || []).filter(c => String(c.contractor_id) === String(user.company_id) || String(c.id) === String(user.company_id));
         const filteredEmployees = (usersData || []).filter(u => String(u.company_id) === String(user.company_id));
 
@@ -163,7 +81,7 @@ function Customers() {
         setEmployees(filteredEmployees);
 
         const mappedCustomers = (customersData || [])
-          .filter(c => String(c.contractor_id) === String(user.company_id) || String(c.company_id) === String(user.company_id)) // Daha geniş filtreleme
+          .filter(c => String(c.contractor_id) === String(user.company_id) || String(c.company_id) === String(user.company_id))
           .map(c => ({
             id: c.id,
             company_id: c.company_id,
@@ -188,22 +106,17 @@ function Customers() {
     }
   };
 
-  useEffect(() => {
-    fetchData();
-  }, [user]);
+  useEffect(() => { fetchData(); }, [user]);
 
   useEffect(() => {
     function handleClickOutside(event) {
-      if (columnDropdownRef.current && !columnDropdownRef.current.contains(event.target)) {
-        setIsColumnDropdownOpen(false);
-      }
       if (filterDropdownRef.current && !filterDropdownRef.current.contains(event.target)) {
         setIsFilterDropdownOpen(false);
       }
     }
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [columnDropdownRef, filterDropdownRef]);
+  }, []);
 
   const toggleMobileMenu = () => setIsMobileMenuOpen(prev => !prev);
 
@@ -213,14 +126,10 @@ function Customers() {
 
   const filteredCustomers = useMemo(() => {
     switch (selectedFilterOption) {
-      case 'Tümü':
-        return customers;
-      case 'Varolan Kayıtlar':
-        return customers.filter(c => !c.is_deleted);
-      case 'Silinmiş Kayıtlar':
-        return customers.filter(c => c.is_deleted);
-      default:
-        return customers.filter(c => !c.is_deleted); // Varsayılan olarak silinmemişleri göster //
+      case 'Tümü': return customers;
+      case 'Varolan Kayıtlar': return customers.filter(c => !c.is_deleted);
+      case 'Silinmiş Kayıtlar': return customers.filter(c => c.is_deleted);
+      default: return customers.filter(c => !c.is_deleted);
     }
   }, [customers, selectedFilterOption]);
 
@@ -248,10 +157,6 @@ function Customers() {
     }
   };
 
-  const toggleColumnVisibility = (key) => {
-    setVisibleColumns(prev => prev.includes(key) ? prev.filter(k => k !== key) : [...prev, key]);
-  };
-
   const openAddModal = () => setIsAddModalOpen(true);
   const closeAddModal = () => { setIsAddModalOpen(false); setNewCustomerData(initialNewCustomerData); };
 
@@ -262,21 +167,10 @@ function Customers() {
   };
 
   const handleAddNewCustomer = async () => {
-    if (!newCustomerData.full_name || !newCustomerData.phone) {
-      alert('Müşteri Adı Soyadı ve Telefon alanları zorunludur.');
-      return;
-    }
-    if (!newCustomerData.company_id || !newCustomerData.employee_id) {
-      alert('Şirket Adı ve Sorumlu Çalışan alanları zorunludur.');
-      return;
-    }
-
+    if (!newCustomerData.full_name || !newCustomerData.phone) { alert('Müşteri Adı Soyadı ve Telefon alanları zorunludur.'); return; }
+    if (!newCustomerData.company_id || !newCustomerData.employee_id) { alert('Şirket Adı ve Sorumlu Çalışan alanları zorunludur.'); return; }
     try {
-      const createData = {
-        ...newCustomerData,
-        contractor_id: user.company_id,
-        is_deleted: false
-      };
+      const createData = { ...newCustomerData, contractor_id: user.company_id, is_deleted: false };
       await api.post('/customers', createData);
       await fetchData();
       closeAddModal();
@@ -286,11 +180,7 @@ function Customers() {
     }
   };
 
-  const openEditModal = (customer) => {
-    setSelectedCustomerForEdit(customer);
-    setEditFormData({ ...customer });
-    setIsEditModalOpen(true);
-  };
+  const openEditModal = (customer) => { setSelectedCustomerForEdit(customer); setEditFormData({ ...customer }); setIsEditModalOpen(true); };
   const closeEditModal = () => { setIsEditModalOpen(false); setTimeout(() => { setSelectedCustomerForEdit(null); setEditFormData(null); }, 300); };
   const handleEditFormChange = (e) => {
     const { name, value } = e.target;
@@ -298,192 +188,220 @@ function Customers() {
     setEditFormData(prev => ({ ...prev, [name]: processedValue }));
   };
   const handleUpdateCustomer = async () => {
-    if (!editFormData.full_name || !editFormData.phone) {
-      alert('Müşteri Adı Soyadı ve Telefon alanları boş bırakılamaz.');
-      return;
-    }
-    if (!editFormData.company_id || !editFormData.employee_id) {
-      alert('Şirket Adı ve Sorumlu Çalışan alanları boş bırakılamaz.');
-      return;
-    }
-
+    if (!editFormData.full_name || !editFormData.phone) { alert('Müşteri Adı Soyadı ve Telefon alanları boş bırakılamaz.'); return; }
+    if (!editFormData.company_id || !editFormData.employee_id) { alert('Şirket Adı ve Sorumlu Çalışan alanları boş bırakılamaz.'); return; }
     try {
       const updateData = {
-        company_id: editFormData.company_id,
-        employee_id: editFormData.employee_id,
-        full_name: editFormData.full_name,
-        identity_number: editFormData.identity_number,
-        phone: editFormData.phone,
-        email: editFormData.email,
-        address: editFormData.address
+        company_id: editFormData.company_id, employee_id: editFormData.employee_id,
+        full_name: editFormData.full_name, identity_number: editFormData.identity_number,
+        phone: editFormData.phone, email: editFormData.email, address: editFormData.address
       };
       await api.put(`/customers/${selectedCustomerForEdit.id}`, updateData);
       await fetchData();
       closeEditModal();
     } catch (err) {
-      console.error("Müşteri güncelleme hatası:", err);
-      alert("Güncelleme sırasında hata oluştu.");
+      console.error("Müşteri güncelleme hatası:", err); alert("Güncelleme sırasında hata oluştu.");
     }
   };
 
   const toggleFilterDropdown = () => setIsFilterDropdownOpen(prev => !prev);
-  const handleFilterChange = (option) => {
-    setSelectedFilterOption(option);
-    setIsFilterDropdownOpen(false);
-    setSelectedCustomers([]);
-  };
+  const handleFilterChange = (option) => { setSelectedFilterOption(option); setIsFilterDropdownOpen(false); setSelectedCustomers([]); };
+
+  // Stats
+  const totalCustomers = customers.length;
+  const activeCustomers = customers.filter(c => !c.is_deleted).length;
+  const deletedCustomers = customers.filter(c => c.is_deleted).length;
+
+  // DataTable columns
+  const tableColumns = [
+    {
+      key: 'company_name',
+      label: 'Şirket',
+      render: (val) => <span className="font-semibold text-slate-700">{val}</span>
+    },
+    {
+      key: 'employee_name',
+      label: 'Sorumlu',
+      render: (val) => <span className="text-slate-600">{val}</span>
+    },
+    {
+      key: 'full_name',
+      label: 'Müşteri',
+      render: (val, row) => (
+        <div className="flex items-center gap-2.5">
+          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center text-white text-xs font-bold shadow-sm">
+            {val?.charAt(0) || '?'}
+          </div>
+          <div>
+            <p className="font-semibold text-slate-800 text-[13px]">{val}</p>
+            {row.email !== '-' && (
+              <p className="text-[11px] text-slate-400 flex items-center gap-1">
+                <Mail size={10} />{row.email}
+              </p>
+            )}
+          </div>
+        </div>
+      )
+    },
+    {
+      key: 'phone',
+      label: 'Telefon',
+      render: (val) => (
+        <span className="flex items-center gap-1.5 text-slate-600 text-[13px]">
+          <Phone size={13} className="text-slate-400" />
+          {val}
+        </span>
+      )
+    },
+    {
+      key: 'identity_number',
+      label: 'Kimlik No',
+      render: (val) => <span className="text-slate-500 text-[12px] font-mono">{val}</span>
+    },
+    {
+      key: 'created_at',
+      label: 'Kayıt Tarihi',
+      render: (val) => <span className="text-slate-500 text-[12px]">{val}</span>
+    },
+    {
+      key: 'actions',
+      label: 'İşlemler',
+      sortable: false,
+      align: 'center',
+      stopPropagation: true,
+      render: (_, row) => (
+        <button
+          onClick={() => openEditModal(row)}
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[12px] font-semibold text-slate-600 bg-white border border-slate-200 hover:text-indigo-600 hover:border-indigo-200 hover:bg-indigo-50 rounded-lg transition-all shadow-sm"
+        >
+          <Pencil size={13} /> Düzenle
+        </button>
+      )
+    },
+  ];
 
   return (
-    <div className="flex min-h-screen bg-[#F5F5F7] font-sans text-slate-800">
+    <div className="flex min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-50 font-sans text-slate-800">
       <Sidebar isMobileMenuOpen={isMobileMenuOpen} closeMobileMenu={() => setIsMobileMenuOpen(false)} />
       <main className="flex-1 overflow-y-auto h-screen pt-16 md:pt-0 relative">
         <Navbar title="Müşteriler" toggleMobileMenu={toggleMobileMenu} />
 
-        <div className="px-4 sm:px-6 md:px-8 pb-12 pt-4 space-y-8">
-          <SectionHeader
-            title="Müşteri Listesi"
-            action={
-              <>
-                {/* Filtreleme Dropdown'ı */}
-                <div className="relative" ref={filterDropdownRef}>
-                  <button
-                    onClick={toggleFilterDropdown}
-                    className="flex items-center gap-1.5 text-sm font-medium text-slate-600 bg-white hover:bg-slate-50 border border-slate-200 shadow-sm px-3 py-1.5 rounded-lg transition-colors"
-                  >
-                    <Filter size={14} />
-                    {selectedFilterOption !== 'Tümü' && (
-                      <span className="ml-1 px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 text-xs font-semibold">
-                        {selectedFilterOption}
-                      </span>
-                    )}
-                  </button>
-                  {isFilterDropdownOpen && (
-                    <div className="absolute top-full right-0 mt-2 w-48 bg-white border border-slate-200 rounded-lg shadow-lg z-20 animate-in fade-in-25">
-                      <div className="p-2">
-                        <p className="text-xs font-semibold text-slate-400 px-2 pt-1 pb-2">Duruma Göre Filtrele</p>
-                        {customerFilterOptions.map(option => (
-                          <button
-                            key={option}
-                            onClick={() => handleFilterChange(option)}
-                            className={`flex items-center justify-between w-full px-2 py-1.5 rounded-md text-sm ${selectedFilterOption === option ? 'bg-blue-50 text-blue-700 font-semibold' : 'hover:bg-slate-50 text-slate-700'}`}
-                          >
-                            <span>{option}</span>
-                            {selectedFilterOption === option && <CheckCircle size={16} className="text-blue-600" />}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
+        <div className="px-4 sm:px-6 md:px-8 pb-12 pt-6 space-y-6">
 
-                <div className="relative" ref={columnDropdownRef}>
-                  <button
-                    onClick={() => setIsColumnDropdownOpen(prev => !prev)}
-                    className="flex items-center gap-1.5 text-sm font-medium text-slate-600 bg-white hover:bg-slate-50 border border-slate-200 shadow-sm px-3 py-1.5 rounded-lg transition-colors"
-                  >
-                    <Columns size={14} />
-                  </button>
-                  {isColumnDropdownOpen && (
-                    <div className="absolute top-full right-0 mt-2 w-48 bg-white border border-slate-200 rounded-lg shadow-lg z-20 animate-in fade-in-25">
-                      <div className="p-2">
-                        <p className="text-xs font-semibold text-slate-400 px-2 pt-1 pb-2">Sütunları Göster</p>
-                        {optionalColumns.map(col => (
-                          <label key={col.key} className="flex items-center gap-2 px-2 py-1.5 rounded-md hover:bg-slate-50 cursor-pointer">
-                            <input type="checkbox" checked={visibleColumns.includes(col.key)} onChange={() => toggleColumnVisibility(col.key)} className="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer accent-blue-600" />
-                            <span className="text-sm text-slate-700">{col.label}</span>
-                          </label>
-                        ))}
-                      </div>
-                    </div>
-                  )}
+          {/* Stats Cards */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="bg-white rounded-2xl border border-slate-200 p-5 card-hover">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Toplam Müşteri</p>
+                  <p className="text-2xl font-bold text-slate-800">{totalCustomers}</p>
                 </div>
-                <button onClick={openAddModal} className="flex items-center gap-1.5 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 shadow-sm px-3 py-1.5 rounded-lg transition-colors">
-                  <Plus size={14} /> Yeni Müşteri
-                </button>
-              </>
-            }
-          />
-
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
-            {selectedCustomers.length > 0 && (
-              <div className="flex flex-wrap items-center justify-between border border-slate-200 p-3 rounded-xl mb-4 animate-in fade-in slide-in-from-top-2 duration-200">
-                <div className="flex items-center gap-3 mb-2 sm:mb-0">
-                  <span className="flex items-center justify-center bg-blue-600 text-white w-6 h-6 rounded-full text-xs font-bold">{selectedCustomers.length}</span>
-                  <span className="text-sm font-medium text-slate-700">müşteri seçildi</span>
-                </div>
-                <div className="flex flex-wrap items-center gap-2 sm:gap-4">
-                  <button onClick={handleSelectAll} className="flex items-center gap-1.5 text-sm font-medium text-blue-700 bg-blue-50 hover:bg-blue-100 transition-colors px-3 py-1.5 rounded-lg">
-                    <CheckSquare size={16} />
-                    <span className="hidden sm:inline">{selectedCustomers.length === filteredCustomers.length ? 'Seçimi Temizle' : 'Tümünü Seç'}</span>
-                  </button>
-                  <div className="w-px h-5 bg-slate-300"></div>
-                  <button onClick={handleDeleteSelected} className="flex items-center gap-1.5 text-sm font-medium text-red-600 hover:text-red-700 bg-red-50 hover:bg-red-100 px-3 py-1.5 rounded-lg transition-colors">
-                    <Trash2 size={16} /> <span>Silinmiş Yap</span>
-                  </button>
+                <div className="w-11 h-11 rounded-xl bg-indigo-50 flex items-center justify-center text-indigo-600">
+                  <Users size={22} />
                 </div>
               </div>
-            )}
-
-            <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse min-w-max">
-                <thead>
-                  <tr className="text-xs font-semibold text-slate-400 border-b border-slate-100">
-                    <th className="pb-3 pl-2 w-10"></th>
-                    <th className="pb-3 px-4">Şirket Adı</th>
-                    <th className="pb-3 px-4">Sorumlu Çalışan</th>
-                    <th className="pb-3 px-4">Müşteri Adı Soyadı</th>
-                    <th className="pb-3 px-4">Telefon</th>
-                    {visibleColumns.includes('identity_number') && <th className="pb-3 px-4">Kimlik No</th>}
-                    {visibleColumns.includes('email') && <th className="pb-3 px-4">E-posta</th>}
-                    {visibleColumns.includes('address') && <th className="pb-3 px-4">Adres</th>}
-                    {visibleColumns.includes('created_at') && <th className="pb-3 px-4">Oluşturulma Tarihi</th>}
-                    <th className="pb-3 px-4 text-center">İşlemler</th>
-                  </tr>
-                </thead>
-                <tbody className="text-sm">
-                  {loading ? (
-                    [...Array(5)].map((_, i) => (
-                      <tr key={i} className="animate-pulse border-b border-slate-50">
-                        <td className="py-4 pl-2"><div className="w-4 h-4 bg-slate-100 rounded"></div></td>
-                        <td className="py-4 px-4"><div className="h-4 bg-slate-100 rounded w-24"></div></td>
-                        <td className="py-4 px-4"><div className="h-4 bg-slate-50 rounded w-32"></div></td>
-                        <td className="py-4 px-4"><div className="h-4 bg-slate-100 rounded w-40"></div></td>
-                        <td className="py-4 px-4"><div className="h-4 bg-slate-50 rounded w-28"></div></td>
-                        <td className="py-4 px-4 text-center"><div className="h-8 bg-slate-50 rounded-lg w-16 mx-auto"></div></td>
-                      </tr>
-                    ))
-                  ) : filteredCustomers.length === 0 ? (
-                    <tr>
-                      <td colSpan={6 + visibleColumns.length} className="py-8 text-center text-slate-500">
-                        {selectedFilterOption === 'Tümü' ? 'Gösterilecek müşteri bulunamadı.' : `"${selectedFilterOption}" kayıtlarda müşteri bulunamadı.`}
-                      </td>
-                    </tr>
-                  ) : (
-                    filteredCustomers.map(customer => (
-                      <tr key={customer.id} className={`group transition-colors border-b border-slate-50 last:border-none ${selectedCustomers.includes(customer.id) ? 'bg-blue-50/50' : 'hover:bg-slate-50'} ${customer.is_deleted ? 'opacity-60 italic text-slate-500' : ''}`}>
-                        <td className="py-4 pl-2">
-                          <input type="checkbox" checked={selectedCustomers.includes(customer.id)} onChange={() => handleSelectCustomer(customer.id)} className="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer accent-blue-600" />
-                        </td>
-                        <td className="py-4 px-4 font-medium text-slate-700">{customer.company_name}</td>
-                        <td className="py-4 px-4 text-slate-700">{customer.employee_name}</td>
-                        <td className="py-4 px-4 text-slate-700">{customer.full_name}</td>
-                        <td className="py-4 px-4 text-slate-700">{customer.phone}</td>
-                        {visibleColumns.includes('identity_number') && <td className="py-4 px-4 text-slate-500">{customer.identity_number}</td>}
-                        {visibleColumns.includes('email') && <td className="py-4 px-4 text-slate-500">{customer.email}</td>}
-                        {visibleColumns.includes('address') && <td className="py-4 px-4 text-slate-500 max-w-xs truncate" title={customer.address}>{customer.address}</td>}
-                        {visibleColumns.includes('created_at') && <td className="py-4 px-4 text-slate-500">{customer.created_at}</td>}
-                        <td className="py-4 px-4 text-center">
-                          <button onClick={() => openEditModal(customer)} className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 text-sm font-medium text-slate-600 bg-white border border-slate-200 hover:text-blue-600 hover:border-blue-200 hover:bg-blue-50 rounded-lg transition-all shadow-sm">
-                            <Pencil size={14} /> Düzenle
-                          </button>
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
+            </div>
+            <div className="bg-white rounded-2xl border border-slate-200 p-5 card-hover">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Aktif Müşteri</p>
+                  <p className="text-2xl font-bold text-emerald-600">{activeCustomers}</p>
+                </div>
+                <div className="w-11 h-11 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-600">
+                  <UserPlus size={22} />
+                </div>
+              </div>
+            </div>
+            <div className="bg-white rounded-2xl border border-slate-200 p-5 card-hover">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Silinmiş Kayıt</p>
+                  <p className="text-2xl font-bold text-red-500">{deletedCustomers}</p>
+                </div>
+                <div className="w-11 h-11 rounded-xl bg-red-50 flex items-center justify-center text-red-500">
+                  <UserX size={22} />
+                </div>
+              </div>
             </div>
           </div>
+
+          {/* Header Actions */}
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <h2 className="text-lg font-bold text-slate-800">Müşteri Listesi</h2>
+            <div className="flex flex-wrap items-center gap-2">
+              {/* Filter */}
+              <div className="relative" ref={filterDropdownRef}>
+                <button
+                  onClick={toggleFilterDropdown}
+                  className="flex items-center gap-1.5 text-sm font-medium text-slate-600 bg-white hover:bg-slate-50 border border-slate-200 shadow-sm px-3.5 py-2 rounded-xl transition-all"
+                >
+                  <Filter size={14} />
+                  {selectedFilterOption !== 'Tümü' && (
+                    <span className="ml-1 px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700 text-xs font-semibold">
+                      {selectedFilterOption}
+                    </span>
+                  )}
+                </button>
+                {isFilterDropdownOpen && (
+                  <div className="absolute top-full right-0 mt-2 w-52 bg-white border border-slate-200 rounded-xl shadow-xl z-20 animate-scale-in overflow-hidden">
+                    <div className="p-2">
+                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider px-2 pt-1 pb-2">Duruma Göre Filtrele</p>
+                      {customerFilterOptions.map(option => (
+                        <button
+                          key={option}
+                          onClick={() => handleFilterChange(option)}
+                          className={`flex items-center justify-between w-full px-3 py-2 rounded-lg text-sm transition-all ${selectedFilterOption === option ? 'bg-indigo-50 text-indigo-700 font-semibold' : 'hover:bg-slate-50 text-slate-700'}`}
+                        >
+                          <span>{option}</span>
+                          {selectedFilterOption === option && <CheckCircle size={16} className="text-indigo-600" />}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <button onClick={openAddModal} className="btn-primary">
+                <Plus size={15} /> Yeni Müşteri
+              </button>
+            </div>
+          </div>
+
+          {/* Selection Action Bar */}
+          {selectedCustomers.length > 0 && (
+            <div className="flex flex-wrap items-center justify-between bg-indigo-50 border border-indigo-200 p-3.5 rounded-xl animate-fade-in">
+              <div className="flex items-center gap-3 mb-2 sm:mb-0">
+                <span className="flex items-center justify-center bg-indigo-600 text-white w-7 h-7 rounded-lg text-xs font-bold">
+                  {selectedCustomers.length}
+                </span>
+                <span className="text-sm font-semibold text-indigo-800">müşteri seçildi</span>
+              </div>
+              <div className="flex flex-wrap items-center gap-2">
+                <button onClick={handleSelectAll} className="flex items-center gap-1.5 text-sm font-semibold text-indigo-700 bg-white hover:bg-indigo-100 transition-colors px-3 py-1.5 rounded-lg border border-indigo-200">
+                  <CheckSquare size={15} />
+                  <span className="hidden sm:inline">{selectedCustomers.length === filteredCustomers.length ? 'Seçimi Temizle' : 'Tümünü Seç'}</span>
+                </button>
+                <button onClick={handleDeleteSelected} className="flex items-center gap-1.5 text-sm font-semibold text-red-600 hover:text-red-700 bg-red-50 hover:bg-red-100 px-3 py-1.5 rounded-lg border border-red-200 transition-colors">
+                  <Trash2 size={15} /> <span>Silinmiş Yap</span>
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* DataTable */}
+          <DataTable
+            columns={tableColumns}
+            data={filteredCustomers}
+            loading={loading}
+            selectable={true}
+            selectedRows={selectedCustomers}
+            onSelect={handleSelectCustomer}
+            rowKey="id"
+            searchPlaceholder="Müşteri ara... (isim, telefon, e-posta)"
+            pageSize={10}
+            emptyMessage={selectedFilterOption === 'Tümü' ? 'Gösterilecek müşteri bulunamadı.' : `"${selectedFilterOption}" kayıtlarda müşteri bulunamadı.`}
+            rowClassName={(row) => row.is_deleted ? 'opacity-50' : ''}
+          />
         </div>
 
         <CustomerEditModal
@@ -496,7 +414,6 @@ function Customers() {
           employees={employees}
         />
 
-        {/* Eski inline form silindi, yerine aşağıdaki modal çağrısı eklendi */}
         <NewCostumerModal
           isOpen={isAddModalOpen}
           onClose={closeAddModal}
@@ -506,7 +423,6 @@ function Customers() {
           companies={companies}
           employees={employees}
         />
-
       </main>
     </div>
   );

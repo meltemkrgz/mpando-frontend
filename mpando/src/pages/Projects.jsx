@@ -23,7 +23,8 @@ import {
   Hash,
   Users,
   MapPin,
-  Calendar
+  Calendar,
+  FileText
 } from 'lucide-react';
 
 const getStatusClasses = (status) => {
@@ -81,11 +82,11 @@ const initialNewProjectData = {
 };
 
 const optionalColumns = [
-  { key: 'description', label: 'Açıklama' },
-  { key: 'startDate', label: 'Başlangıç Tarihi' },
-  { key: 'endDate', label: 'Bitiş Tarihi' },
-  { key: 'contractor', label: 'Müteahhit' },
-  { key: 'created_at', label: 'Oluşturulma Tarihi' },
+  { key: 'description', label: 'Açıklama', icon: <FileText size={14} /> },
+  { key: 'startDate', label: 'Başlangıç Tarihi', icon: <Calendar size={14} /> },
+  { key: 'endDate', label: 'Bitiş Tarihi', icon: <Clock size={14} /> },
+  { key: 'contractor', label: 'Müteahhit', icon: <Users size={14} /> },
+  { key: 'created_at', label: 'Oluşturulma Tarihi', icon: <Calendar size={14} /> },
 ];
 
 function SectionHeader({ title, action }) {
@@ -120,6 +121,7 @@ function Projects() {
   const [isFilterDropdownOpen, setIsFilterDropdownOpen] = useState(false);
   const [selectedStatusFilter, setSelectedStatusFilter] = useState('Hepsi');
   const filterDropdownRef = useRef(null);
+  const [searchQuery, setSearchQuery] = useState('');
 
   const allStatusOptions = ['Hepsi', ...new Set(projects.map(p => p.status))];
 
@@ -343,95 +345,156 @@ function Projects() {
     setSelectedProjects([]);
   };
 
-  const filteredProjects = selectedStatusFilter === 'Hepsi'
+  const filteredProjects = (selectedStatusFilter === 'Hepsi'
     ? projects
-    : projects.filter(proj => proj.status === selectedStatusFilter);
+    : projects.filter(proj => proj.status === selectedStatusFilter)
+  ).filter(proj => {
+    if (!searchQuery.trim()) return true;
+    const q = searchQuery.toLowerCase();
+    return (
+      (proj.company || '').toLowerCase().includes(q) ||
+      (proj.address || '').toLowerCase().includes(q) ||
+      (proj.contractor || '').toLowerCase().includes(q) ||
+      (proj.description || '').toLowerCase().includes(q)
+    );
+  });
 
   return (
-    <div className="flex min-h-screen bg-[#F5F5F7] font-sans text-slate-800">
+    <div className="flex min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-50 font-sans text-slate-800">
       <Sidebar isMobileMenuOpen={isMobileMenuOpen} closeMobileMenu={() => setIsMobileMenuOpen(false)} />
       <main className="flex-1 overflow-y-auto h-screen pt-16 md:pt-0 relative">
         <Navbar title="Projeler" toggleMobileMenu={toggleMobileMenu} />
 
-        <div className="px-4 sm:px-6 md:px-8 pb-12 pt-4 space-y-8">
-          <SectionHeader
-            title="Proje Listesi"
-            action={
-              <>
-                <div className="relative" ref={filterDropdownRef}>
-                  <button
-                    onClick={toggleFilterDropdown}
-                    className="flex items-center gap-1.5 text-sm font-medium text-slate-600 bg-white hover:bg-slate-50 border border-slate-200 shadow-sm px-3 py-1.5 rounded-lg transition-colors"
-                  >
-                    <Filter size={14} />
-                    {selectedStatusFilter !== 'Hepsi' && (
-                      <span className="ml-1 px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 text-xs font-semibold">
-                        {selectedStatusFilter}
-                      </span>
-                    )}
-                  </button>
-                  {isFilterDropdownOpen && (
-                    <div className="absolute top-full right-0 mt-2 w-48 bg-white border border-slate-200 rounded-lg shadow-lg z-20 animate-in fade-in-25">
-                      <div className="p-2">
-                        <p className="text-xs font-semibold text-slate-400 px-2 pt-1 pb-2">Duruma Göre Filtrele</p>
-                        {allStatusOptions.map(option => (
-                          <button
-                            key={option}
-                            onClick={() => handleFilterChange(option)}
-                            className={`flex items-center justify-between w-full px-2 py-1.5 rounded-md text-sm ${selectedStatusFilter === option ? 'bg-blue-50 text-blue-700 font-semibold' : 'hover:bg-slate-50 text-slate-700'}`}
-                          >
-                            <span>{option}</span>
-                            {selectedStatusFilter === option && <CheckCircle size={16} className="text-blue-600" />}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
+        <div className="px-4 sm:px-6 md:px-8 pb-12 pt-6 space-y-6">
 
-                <div className="relative" ref={columnDropdownRef}>
-                  <button
-                    onClick={() => setIsColumnDropdownOpen(prev => !prev)}
-                    className="flex items-center gap-1.5 text-sm font-medium text-slate-600 bg-white hover:bg-slate-50 border border-slate-200 shadow-sm px-3 py-1.5 rounded-lg transition-colors"
-                  >
-                    <Columns size={14} />
-                  </button>
-                  {isColumnDropdownOpen && (
-                    <div className="absolute top-full right-0 mt-2 w-48 bg-white border border-slate-200 rounded-lg shadow-lg z-20 animate-in fade-in-25">
-                      <div className="p-2">
-                        <p className="text-xs font-semibold text-slate-400 px-2 pt-1 pb-2">Sütunları Göster</p>
+          {/* ═════════════════ HEADER BANNER ═════════════════ */}
+          <div className="relative overflow-hidden bg-gradient-to-r from-indigo-600 via-indigo-500 to-purple-600 rounded-2xl p-6 text-white animate-fade-in">
+            <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/3 blur-2xl" />
+            <div className="absolute bottom-0 left-0 w-40 h-40 bg-purple-500/20 rounded-full translate-y-1/2 -translate-x-1/4 blur-xl" />
+
+            <div className="relative flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+              <div>
+                <h1 className="text-xl font-bold mb-1">Proje Yönetimi</h1>
+                <p className="text-white/60 text-sm">{projects.length} proje kayıtlı</p>
+              </div>
+              <div className="flex items-center gap-2 flex-wrap">
+                {/* Stat Pills */}
+                {[
+                  { label: 'Devam', count: projects.filter(p => p.status === 'Devam Ediyor').length, color: 'bg-white/20' },
+                  { label: 'Plan', count: projects.filter(p => p.status === 'Planlanıyor').length, color: 'bg-amber-400/20' },
+                  { label: 'Bitti', count: projects.filter(p => p.status === 'Tamamlandı').length, color: 'bg-emerald-400/20' },
+                  { label: 'Gecikme', count: projects.filter(p => p.status === 'Gecikmede').length, color: 'bg-rose-400/20' },
+                ].filter(s => s.count > 0).map(s => (
+                  <span key={s.label} className={`${s.color} backdrop-blur-sm px-3 py-1 rounded-full text-xs font-semibold`}>
+                    {s.count} {s.label}
+                  </span>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* ═════════════════ TOOLBAR ═════════════════ */}
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+            {/* Search */}
+            <div className="relative w-full sm:max-w-xs">
+              <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+              <input
+                type="text"
+                placeholder="Proje ara..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-300 transition-all shadow-sm"
+              />
+            </div>
+
+            {/* Actions */}
+            <div className="flex items-center gap-2 flex-wrap">
+              <div className="relative" ref={filterDropdownRef}>
+                <button
+                  onClick={toggleFilterDropdown}
+                  className="flex items-center gap-1.5 text-sm font-medium text-slate-600 bg-white hover:bg-slate-50 border border-slate-200 shadow-sm px-3.5 py-2.5 rounded-xl transition-all"
+                >
+                  <Filter size={14} />
+                  {selectedStatusFilter !== 'Hepsi' && (
+                    <span className="ml-1 px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700 text-xs font-semibold">
+                      {selectedStatusFilter}
+                    </span>
+                  )}
+                </button>
+                {isFilterDropdownOpen && (
+                  <div className="absolute top-full right-0 mt-2 w-52 bg-white border border-slate-200 rounded-xl shadow-xl z-20 animate-scale-in overflow-hidden">
+                    <div className="p-2">
+                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider px-2 pt-1 pb-2">Duruma Göre Filtrele</p>
+                      {allStatusOptions.map(option => (
+                        <button
+                          key={option}
+                          onClick={() => handleFilterChange(option)}
+                          className={`flex items-center justify-between w-full px-3 py-2 rounded-lg text-sm transition-all ${selectedStatusFilter === option ? 'bg-indigo-50 text-indigo-700 font-semibold' : 'hover:bg-slate-50 text-slate-700'}`}
+                        >
+                          <span>{option}</span>
+                          {selectedStatusFilter === option && <CheckCircle size={16} className="text-indigo-600" />}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <div className="relative" ref={columnDropdownRef}>
+                <button
+                  onClick={() => setIsColumnDropdownOpen(prev => !prev)}
+                  className="flex items-center gap-1.5 text-sm font-medium text-slate-600 bg-white hover:bg-slate-50 border border-slate-200 shadow-sm px-3.5 py-2.5 rounded-xl transition-all"
+                >
+                  <Columns size={14} />
+                </button>
+                {isColumnDropdownOpen && (
+                  <div className="absolute top-full right-0 mt-2 w-56 bg-white border border-slate-200 rounded-xl shadow-xl z-20 animate-scale-in overflow-hidden">
+                    <div className="p-2">
+                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider px-3 pt-2 pb-2 border-b border-slate-50 mb-1">Kart Bilgilerini Özelleştir</p>
+                      <div className="space-y-0.5">
                         {optionalColumns.map(col => (
-                          <label key={col.key} className="flex items-center gap-2 px-2 py-1.5 rounded-md hover:bg-slate-50 cursor-pointer">
-                            <input type="checkbox" checked={visibleColumns.includes(col.key)} onChange={() => toggleColumnVisibility(col.key)} className="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer accent-blue-600" />
-                            <span className="text-sm text-slate-700">{col.label}</span>
+                          <label key={col.key} className="flex items-center justify-between px-3 py-2.5 rounded-lg hover:bg-slate-50 cursor-pointer group transition-colors">
+                            <div className="flex items-center gap-2.5">
+                              <span className={`p-1.5 rounded-md ${visibleColumns.includes(col.key) ? 'bg-indigo-50 text-indigo-600' : 'bg-slate-50 text-slate-400'} group-hover:bg-indigo-100 group-hover:text-indigo-700 transition-colors`}>
+                                {col.icon}
+                              </span>
+                              <span className={`text-sm ${visibleColumns.includes(col.key) ? 'text-slate-700 font-semibold' : 'text-slate-500 font-medium'}`}>{col.label}</span>
+                            </div>
+                            <input
+                              type="checkbox"
+                              checked={visibleColumns.includes(col.key)}
+                              onChange={() => toggleColumnVisibility(col.key)}
+                              className="w-4 h-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer accent-indigo-600"
+                            />
                           </label>
                         ))}
                       </div>
                     </div>
-                  )}
-                </div>
-                <button onClick={openAddModal} className="flex items-center gap-1.5 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 shadow-sm px-3 py-1.5 rounded-lg transition-colors">
-                  <Plus size={14} /> Yeni Proje
-                </button>
-              </>
-            }
-          />
+                  </div>
+                )}
+              </div>
 
-          <div className="space-y-6">
+              <button onClick={openAddModal} className="flex items-center gap-1.5 text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-700 shadow-sm shadow-indigo-600/20 px-4 py-2.5 rounded-xl transition-all">
+                <Plus size={15} /> Yeni Proje
+              </button>
+            </div>
+          </div>
+
+          {/* Selection Bar */}
+          <div className="space-y-4">
             {selectedProjects.length > 0 && (
-              <div className="flex flex-wrap items-center justify-between border border-slate-200 p-3 rounded-xl mb-4 animate-in fade-in slide-in-from-top-2 duration-200">
+              <div className="flex flex-wrap items-center justify-between bg-indigo-50 border border-indigo-200 p-3.5 rounded-xl animate-fade-in">
                 <div className="flex items-center gap-3 mb-2 sm:mb-0">
-                  <span className="flex items-center justify-center bg-blue-600 text-white w-6 h-6 rounded-full text-xs font-bold">{selectedProjects.length}</span>
-                  <span className="text-sm font-medium text-slate-700">proje seçildi</span>
+                  <span className="flex items-center justify-center bg-indigo-600 text-white w-7 h-7 rounded-lg text-xs font-bold">{selectedProjects.length}</span>
+                  <span className="text-sm font-semibold text-indigo-800">proje seçildi</span>
                 </div>
-                <div className="flex flex-wrap items-center gap-2 sm:gap-4">
-                  <button onClick={handleSelectAll} className="flex items-center gap-1.5 text-sm font-medium text-blue-700 bg-blue-50 hover:bg-blue-100 transition-colors px-3 py-1.5 rounded-lg">
-                    <CheckSquare size={16} />
+                <div className="flex flex-wrap items-center gap-2">
+                  <button onClick={handleSelectAll} className="flex items-center gap-1.5 text-sm font-semibold text-indigo-700 bg-white hover:bg-indigo-100 transition-colors px-3 py-1.5 rounded-lg border border-indigo-200">
+                    <CheckSquare size={15} />
                     <span className="hidden sm:inline">{selectedProjects.length === filteredProjects.length ? 'Seçimi Temizle' : 'Tümünü Seç'}</span>
                   </button>
-                  <div className="w-px h-5 bg-slate-300"></div>
-                  <button onClick={handleDeleteSelected} className="flex items-center gap-1.5 text-sm font-medium text-red-600 hover:text-red-700 bg-red-50 hover:bg-red-100 px-3 py-1.5 rounded-lg transition-colors">
-                    <Trash2 size={16} /> <span>Sil</span>
+                  <button onClick={handleDeleteSelected} className="flex items-center gap-1.5 text-sm font-semibold text-red-600 bg-red-50 hover:bg-red-100 px-3 py-1.5 rounded-lg border border-red-200 transition-colors">
+                    <Trash2 size={15} /> <span>Sil</span>
                   </button>
                 </div>
               </div>
@@ -464,102 +527,88 @@ function Projects() {
                     <div
                       key={proj.id}
                       onClick={() => navigate(`/projects/${proj.id}`)}
-                      className={`relative group bg-white rounded-2xl border transition-all p-6 cursor-pointer ${selectedProjects.includes(proj.id) ? 'border-blue-500 ring-2 ring-blue-500/10 bg-blue-50/10' : 'border-slate-200 hover:border-blue-200 hover:shadow-md'}`}
+                      className={`relative group bg-white rounded-2xl border transition-all cursor-pointer card-hover overflow-hidden ${selectedProjects.includes(proj.id) ? 'border-indigo-500 ring-2 ring-indigo-500/10 bg-indigo-50/10' : 'border-slate-200 hover:border-indigo-200 hover:shadow-lg hover:shadow-indigo-500/5'}`}
                     >
-                      {/* Selection Checkbox */}
-                      <div className="absolute top-4 left-4 z-10" onClick={(e) => e.stopPropagation()}>
-                        <input
-                          type="checkbox"
-                          checked={selectedProjects.includes(proj.id)}
-                          onChange={() => handleSelectProject(proj.id)}
-                          className="w-5 h-5 rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer accent-blue-600"
-                        />
-                      </div>
+                      {/* Top accent line */}
+                      <div className={`h-1 w-full ${proj.status === 'Devam Ediyor' ? 'bg-gradient-to-r from-indigo-500 to-blue-500' :
+                        proj.status === 'Tamamlandı' ? 'bg-gradient-to-r from-emerald-500 to-green-500' :
+                          proj.status === 'Planlanıyor' ? 'bg-gradient-to-r from-amber-400 to-orange-400' :
+                            proj.status === 'Gecikmede' ? 'bg-gradient-to-r from-rose-500 to-red-500' :
+                              'bg-gradient-to-r from-slate-300 to-slate-400'
+                        }`} />
 
-                      {/* Card Content */}
-                      <div className="flex justify-between items-start mb-4 pl-8">
-                        <div>
-                          <h3 className="text-lg font-bold text-slate-800 group-hover:text-blue-600 transition-colors line-clamp-1" title={proj.company}>
+                      <div className="p-5">
+                        {/* Selection Checkbox */}
+                        <div className="absolute top-5 right-5 z-10" onClick={(e) => e.stopPropagation()}>
+                          <input
+                            type="checkbox"
+                            checked={selectedProjects.includes(proj.id)}
+                            onChange={() => handleSelectProject(proj.id)}
+                            className="w-4 h-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer accent-indigo-600"
+                          />
+                        </div>
+
+                        {/* Header */}
+                        <div className="mb-4">
+                          <h3 className="text-base font-bold text-slate-800 group-hover:text-indigo-600 transition-colors line-clamp-1 pr-8" title={proj.company}>
                             {proj.company}
                           </h3>
-                          <p className="text-xs text-slate-400 font-medium">#{proj.id}</p>
-                        </div>
-                        <span className={`inline-flex items-center gap-1 border rounded-full px-2.5 py-1 text-xs font-medium shrink-0 ${getStatusClasses(proj.status)}`}>
-                          {getStatusIcon(proj.status)} {proj.status}
-                        </span>
-                      </div>
-
-                      <div className="space-y-4">
-                        {/* Progress */}
-                        <div className="space-y-1.5">
-                          <div className="flex justify-between text-xs font-semibold">
-                            <span className="text-slate-500">İlerleme</span>
-                            <span className="text-blue-600">%{proj.progress}</span>
-                          </div>
-                          <div className="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
-                            <div
-                              className={`h-full rounded-full transition-all duration-500 ${getProgressBarColor(proj.status)}`}
-                              style={{ width: `${proj.progress}%` }}
-                            ></div>
+                          <div className="flex items-center gap-2 mt-1.5">
+                            <span className={`inline-flex items-center gap-1 border rounded-full px-2 py-0.5 text-[10px] font-bold ${getStatusClasses(proj.status)}`}>
+                              {getStatusIcon(proj.status)} {proj.status}
+                            </span>
+                            {proj.total_units > 0 && (
+                              <span className="text-[10px] text-slate-400 font-semibold bg-slate-50 px-2 py-0.5 rounded-full">
+                                {proj.total_units} ünite
+                              </span>
+                            )}
                           </div>
                         </div>
 
-                        {/* Info Grid */}
-                        <div className="grid grid-cols-2 gap-4 pt-2">
-                          <div className="flex items-center gap-2 text-slate-600">
-                            {/* Ünite kaldırıldı */}
-                          </div>
-
-                          {visibleColumns.includes('contractor') && (
-                            <div className="flex items-center gap-2 text-slate-600">
-                              <div className="p-1.5 bg-slate-50 rounded-lg"><Users size={14} className="text-slate-400" /></div>
-                              <div>
-                                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Sorumlu</p>
-                                <p className="text-xs font-semibold truncate max-w-[80px]" title={proj.contractor}>{proj.contractor}</p>
-                              </div>
+                        {/* Info */}
+                        <div className="space-y-2">
+                          {proj.address && (
+                            <div className="flex items-center gap-2 text-slate-500">
+                              <MapPin size={13} className="text-slate-300 shrink-0" />
+                              <p className="text-xs font-medium truncate" title={proj.address}>{proj.address}</p>
                             </div>
                           )}
-                        </div>
 
-                        {/* Expandable Info Area */}
-                        <div className="space-y-2 pt-2 border-t border-slate-50">
-                          {proj.address && (
-                            <div className="flex items-start gap-2 text-slate-500">
-                              <MapPin size={14} className="mt-0.5 shrink-0" />
-                              <p className="text-xs line-clamp-1" title={proj.address}>{proj.address}</p>
+                          {visibleColumns.includes('contractor') && proj.contractor && (
+                            <div className="flex items-center gap-2 text-slate-500">
+                              <Users size={13} className="text-slate-300 shrink-0" />
+                              <p className="text-xs font-medium truncate" title={proj.contractor}>{proj.contractor}</p>
                             </div>
                           )}
 
                           {visibleColumns.includes('description') && proj.description && (
-                            <div className="text-xs text-slate-500 italic line-clamp-2 bg-slate-50 p-2 rounded-lg">
-                              {proj.description}
+                            <div className="flex items-center gap-2 text-slate-500">
+                              <FileText size={13} className="text-slate-300 shrink-0" />
+                              <p className="text-xs font-medium truncate" title={proj.description}>{proj.description}</p>
                             </div>
                           )}
 
-                          <div className="flex flex-col gap-1.5">
+                          <div className="flex items-center gap-3 pt-1">
                             {visibleColumns.includes('startDate') && proj.startDate && (
-                              <div className="flex items-center gap-2 text-slate-400">
-                                <Calendar size={13} className="shrink-0" />
-                                <p className="text-[10px] font-medium">Başlangıç: {proj.startDate}</p>
-                              </div>
+                              <span className="flex items-center gap-1 text-[10px] text-slate-400 font-medium">
+                                <Calendar size={11} /> {proj.startDate}
+                              </span>
                             )}
-                            {visibleColumns.includes('endDate') && (
-                              <div className="flex items-center gap-2 text-slate-400">
-                                <Calendar size={13} className="shrink-0 text-orange-400" />
-                                <p className="text-[10px] font-medium text-orange-600/70">Bitiş: {proj.endDate || '-'}</p>
-                              </div>
+                            {visibleColumns.includes('endDate') && proj.endDate && proj.endDate !== '-' && (
+                              <span className="flex items-center gap-1 text-[10px] text-orange-400 font-medium">
+                                <Calendar size={11} /> {proj.endDate}
+                              </span>
                             )}
-
                           </div>
                         </div>
 
-                        {/* Actions */}
-                        <div className="flex items-center gap-2 pt-2">
+                        {/* Action */}
+                        <div className="mt-4 pt-3 border-t border-slate-100">
                           <button
                             onClick={(e) => { e.stopPropagation(); openEditModal(proj); }}
-                            className="flex-1 inline-flex items-center justify-center gap-2 px-3 py-2 text-sm font-semibold text-slate-700 bg-slate-50 hover:bg-blue-50 hover:text-blue-600 rounded-xl transition-all border border-transparent hover:border-blue-100"
+                            className="w-full inline-flex items-center justify-center gap-2 px-3 py-2 text-xs font-semibold text-slate-500 bg-slate-50 hover:bg-indigo-50 hover:text-indigo-600 rounded-xl transition-all"
                           >
-                            <Pencil size={15} /> Düzenle
+                            <Pencil size={13} /> Düzenle
                           </button>
                         </div>
                       </div>

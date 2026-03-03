@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import Sidebar from '../components/Sidebar';
 import Navbar from '../components/Navbar';
+import DataTable from '../components/DataTable';
 import SaleEditModal from '../modals/sales/SaleEditModal';
 import NewSaleModal from '../modals/NewSaleModal';
 import SaleDetailsModal from '../modals/sales/SaleDetailsModal';
@@ -11,7 +12,6 @@ import {
   Trash2,
   CheckSquare,
   Pencil,
-  Columns,
   Filter,
   CheckCircle2,
   Clock,
@@ -21,26 +21,28 @@ import {
   Banknote,
   FileText,
   Eye,
-  Download
+  Download,
+  TrendingUp,
+  ShoppingCart,
+  DollarSign
 } from 'lucide-react';
 
-// --- Satış Durumu Renk ve İkonları ---
 const getStatusClasses = (status) => {
   switch (status) {
-    case 'Satıldı': return 'bg-green-50 text-green-700 border-green-200 text-[10px] font-bold px-2 py-1';
-    case 'Beklemede': return 'bg-yellow-50 text-yellow-700 border-yellow-200 text-[10px] font-bold px-2 py-1';
+    case 'Satıldı': return 'bg-emerald-50 text-emerald-700 border-emerald-200';
+    case 'Beklemede': return 'bg-amber-50 text-amber-700 border-amber-200';
     case 'İptal':
-    case 'Reddedildi': return 'bg-red-50 text-red-700 border-red-200 text-[10px] font-bold px-2 py-1';
-    default: return 'bg-slate-50 text-slate-700 border-slate-200 text-[10px] font-bold px-2 py-1';
+    case 'Reddedildi': return 'bg-red-50 text-red-600 border-red-200';
+    default: return 'bg-slate-50 text-slate-700 border-slate-200';
   }
 };
 
 const getStatusIcon = (status) => {
   switch (status) {
-    case 'Satıldı': return <CheckCircle2 size={14} />;
-    case 'Beklemede': return <Clock size={14} />;
+    case 'Satıldı': return <CheckCircle2 size={13} />;
+    case 'Beklemede': return <Clock size={13} />;
     case 'İptal':
-    case 'Reddedildi': return <XCircle size={14} />;
+    case 'Reddedildi': return <XCircle size={13} />;
     default: return null;
   }
 };
@@ -51,23 +53,7 @@ const initialNewSaleData = {
   source: 'Seçiniz', current_meeting_status: 'Yeni', discount_requested: 'Hayır', discount_amount: 0, approval_status: 'Beklemede', contract_file: null
 };
 
-// İsteğe bağlı (açılır/kapanır) sütunlar
-const optionalColumns = [
-  { key: 'offered_price', label: 'Verilen Teklif' },
-  { key: 'sale_date', label: 'Satış Tarihi (Sisteme Giriş)' },
-  { key: 'contract_no', label: 'Sözleşme No' },
-  { key: 'contract_file', label: 'Sözleşme Dosyası' },
-  { key: 'createdAt', label: 'Oluşturma Tarihi' },
-];
-
-function SectionHeader({ title, action }) {
-  return (
-    <div className="flex items-center justify-between mb-6">
-      <h2 className="text-lg font-bold text-slate-800">{title}</h2>
-      <div className="flex flex-wrap items-center gap-2">{action}</div>
-    </div>
-  );
-}
+const allStatusOptions = ['Hepsi', 'Satıldı', 'Beklemede', 'İptal', 'Reddedildi'];
 
 function Sales() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -85,25 +71,15 @@ function Sales() {
   const [selectedSaleForEdit, setSelectedSaleForEdit] = useState(null);
   const [editFormData, setEditFormData] = useState(null);
 
-  // Satış Detay Modalı State'leri
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
   const [selectedSaleForDetails, setSelectedSaleForDetails] = useState(null);
-
-  const [isColumnDropdownOpen, setIsColumnDropdownOpen] = useState(false);
-  const [visibleColumns, setVisibleColumns] = useState(['contract_no']);
-  const columnDropdownRef = useRef(null);
 
   const [isFilterDropdownOpen, setIsFilterDropdownOpen] = useState(false);
   const [selectedStatusFilter, setSelectedStatusFilter] = useState('Hepsi');
   const filterDropdownRef = useRef(null);
 
-  const allStatusOptions = ['Hepsi', 'Satıldı', 'Beklemede', 'İptal', 'Reddedildi'];
-
   useEffect(() => {
     function handleClickOutside(event) {
-      if (columnDropdownRef.current && !columnDropdownRef.current.contains(event.target)) {
-        setIsColumnDropdownOpen(false);
-      }
       if (filterDropdownRef.current && !filterDropdownRef.current.contains(event.target)) {
         setIsFilterDropdownOpen(false);
       }
@@ -117,7 +93,7 @@ function Sales() {
       setLoading(true);
       const [salesData, customersData, projectsData] = await Promise.all([
         api.get('/sales'),
-        api.get('/customers').catch(() => []), // Fallback in case of error
+        api.get('/customers').catch(() => []),
         api.get('/projects').catch(() => [])
       ]);
       setSales(Array.isArray(salesData) ? salesData : []);
@@ -130,17 +106,17 @@ function Sales() {
     }
   };
 
-  useEffect(() => {
-    if (user) {
-      fetchSales();
-    }
-  }, [user]);
+  useEffect(() => { if (user) fetchSales(); }, [user]);
 
   const toggleMobileMenu = () => setIsMobileMenuOpen(prev => !prev);
 
   const handleSelectSale = (id) => {
     setSelectedSales(prev => prev.includes(id) ? prev.filter(s => s !== id) : [...prev, id]);
   };
+
+  const filteredSales = selectedStatusFilter === 'Hepsi'
+    ? sales
+    : sales.filter(sale => sale.sale_status === selectedStatusFilter);
 
   const handleSelectAll = () => {
     const currentSalesIds = filteredSales.map(s => s.id);
@@ -164,75 +140,46 @@ function Sales() {
     }
   };
 
-  const toggleColumnVisibility = (key) => {
-    setVisibleColumns(prev => prev.includes(key) ? prev.filter(k => k !== key) : [...prev, key]);
-  };
-
-  // Yeni Satış Modal İşlemleri
   const openAddModal = () => setIsAddModalOpen(true);
   const closeAddModal = () => { setIsAddModalOpen(false); setNewSaleData(initialNewSaleData); };
 
   const handleNewSaleChange = (e) => {
     if (e.target) {
       const { name, value, files } = e.target;
-      setNewSaleData(prev => ({
-        ...prev,
-        [name]: files ? files[0] : value
-      }));
+      setNewSaleData(prev => ({ ...prev, [name]: files ? files[0] : value }));
     } else {
       setNewSaleData(prev => ({ ...prev, ...e }));
     }
   };
 
   const handleAddNewSale = async () => {
-    if (!newSaleData.musteri_id || !newSaleData.proje_id) {
-      alert('Müşteri ve Proje alanları zorunludur.'); return;
-    }
+    if (!newSaleData.musteri_id || !newSaleData.proje_id) { alert('Müşteri ve Proje alanları zorunludur.'); return; }
     try {
       const dataToSend = { ...newSaleData };
-
-      // Sayısal değerleri dönüştür
       if (dataToSend.musteri_id) dataToSend.musteri_id = Number(dataToSend.musteri_id);
       if (dataToSend.proje_id) dataToSend.proje_id = Number(dataToSend.proje_id);
       if (dataToSend.unit_id) dataToSend.unit_id = Number(dataToSend.unit_id);
       if (dataToSend.offered_price) dataToSend.offered_price = Number(dataToSend.offered_price);
 
       let addedSale;
-      // Sadece dosya varsa FormData kullan, yoksa JSON (daha güvenli)
       if (newSaleData.contract_file) {
         const formData = new FormData();
-        Object.keys(dataToSend).forEach(key => {
-          if (dataToSend[key] !== null && dataToSend[key] !== undefined) {
-            formData.append(key, dataToSend[key]);
-          }
-        });
+        Object.keys(dataToSend).forEach(key => { if (dataToSend[key] !== null && dataToSend[key] !== undefined) formData.append(key, dataToSend[key]); });
         addedSale = await api.upload('/sales', formData);
       } else {
         addedSale = await api.post('/sales', dataToSend);
       }
-
-      if (addedSale) {
-        setSales([addedSale, ...sales]);
-        closeAddModal();
-        fetchSales();
-      }
-    } catch (err) {
-      console.error('Yeni satış eklenirken hata:', err);
-      alert('Satış eklenemedi.');
-    }
+      if (addedSale) { setSales([addedSale, ...sales]); closeAddModal(); fetchSales(); }
+    } catch (err) { console.error('Yeni satış eklenirken hata:', err); alert('Satış eklenemedi.'); }
   };
 
-  // Düzenleme Modal İşlemleri
   const openEditModal = (sale) => { setSelectedSaleForEdit(sale); setEditFormData({ ...sale }); setIsEditModalOpen(true); };
   const closeEditModal = () => { setIsEditModalOpen(false); setTimeout(() => { setSelectedSaleForEdit(null); setEditFormData(null); }, 300); };
 
   const handleEditFormChange = (e) => {
     if (e.target) {
       const { name, value, files } = e.target;
-      setEditFormData(prev => ({
-        ...prev,
-        [name]: files ? files[0] : value
-      }));
+      setEditFormData(prev => ({ ...prev, [name]: files ? files[0] : value }));
     } else {
       setEditFormData(prev => ({ ...prev, ...e }));
     }
@@ -242,8 +189,6 @@ function Sales() {
     if (!editFormData.musteri_id || !editFormData.id) { alert('Hatalı veri gönderimi.'); return; }
     try {
       const dataToSend = { ...editFormData };
-
-      // Sayısal değerleri dönüştür
       if (dataToSend.musteri_id) dataToSend.musteri_id = Number(dataToSend.musteri_id);
       if (dataToSend.proje_id) dataToSend.proje_id = Number(dataToSend.proje_id);
       if (dataToSend.unit_id) dataToSend.unit_id = Number(dataToSend.unit_id);
@@ -251,43 +196,20 @@ function Sales() {
 
       if (editFormData.contract_file) {
         const formData = new FormData();
-        Object.keys(dataToSend).forEach(key => {
-          if (dataToSend[key] !== null && dataToSend[key] !== undefined) {
-            formData.append(key, dataToSend[key]);
-          }
-        });
+        Object.keys(dataToSend).forEach(key => { if (dataToSend[key] !== null && dataToSend[key] !== undefined) formData.append(key, dataToSend[key]); });
         await api.put(`/sales/${selectedSaleForEdit.id}`, formData);
       } else {
         await api.put(`/sales/${selectedSaleForEdit.id}`, dataToSend);
       }
-      closeEditModal();
-      fetchSales();
-    } catch (err) {
-      console.error('Güncelleme sırasında hata:', err);
-      alert('Güncellenemedi.');
-    }
+      closeEditModal(); fetchSales();
+    } catch (err) { console.error('Güncelleme sırasında hata:', err); alert('Güncellenemedi.'); }
   };
 
-  // Detay Modalı İşlemleri
-  const openDetailsModal = (sale) => {
-    setSelectedSaleForDetails(sale);
-    setIsDetailsModalOpen(true);
-  };
-  const closeDetailsModal = () => {
-    setIsDetailsModalOpen(false);
-    setTimeout(() => setSelectedSaleForDetails(null), 300);
-  };
+  const openDetailsModal = (sale) => { setSelectedSaleForDetails(sale); setIsDetailsModalOpen(true); };
+  const closeDetailsModal = () => { setIsDetailsModalOpen(false); setTimeout(() => setSelectedSaleForDetails(null), 300); };
 
   const toggleFilterDropdown = () => setIsFilterDropdownOpen(prev => !prev);
-  const handleFilterChange = (status) => {
-    setSelectedStatusFilter(status);
-    setIsFilterDropdownOpen(false);
-    setSelectedSales([]);
-  };
-
-  const filteredSales = selectedStatusFilter === 'Hepsi'
-    ? sales
-    : sales.filter(sale => sale.sale_status === selectedStatusFilter);
+  const handleFilterChange = (status) => { setSelectedStatusFilter(status); setIsFilterDropdownOpen(false); setSelectedSales([]); };
 
   const formatCurrency = (amount) => {
     if (amount === null || amount === undefined || amount === '') return '-';
@@ -297,292 +219,234 @@ function Sales() {
   const formatDate = (dateStr) => {
     if (!dateStr) return '-';
     return new Date(dateStr).toLocaleDateString('tr-TR');
-  }
+  };
+
+  // Stats
+  const soldCount = sales.filter(s => s.sale_status === 'Satıldı').length;
+  const pendingCount = sales.filter(s => s.sale_status === 'Beklemede').length;
+
+  // DataTable columns
+  const tableColumns = [
+    {
+      key: 'customer_name',
+      label: 'Müşteri',
+      render: (_, row) => (
+        <div className="flex flex-col gap-0.5">
+          <span className="font-semibold text-slate-800 text-[13px]">{row.customers?.full_name || '-'}</span>
+          <span className="flex items-center gap-1 text-[11px] text-slate-400">
+            <Phone size={11} /> {row.customers?.phone || '-'}
+          </span>
+        </div>
+      )
+    },
+    {
+      key: 'project_name',
+      label: 'Proje / Daire',
+      render: (_, row) => (
+        <div className="flex flex-col gap-1">
+          <span className="font-medium text-slate-700 flex items-center gap-1.5 text-[13px]">
+            <Building2 size={13} className="text-indigo-500" /> {row.projects?.name || '-'}
+          </span>
+          {row.interested_product && (
+            <span className="text-[11px] text-slate-500 bg-slate-100 px-2 py-0.5 rounded-md inline-block w-max font-medium">
+              {row.interested_product}
+            </span>
+          )}
+        </div>
+      )
+    },
+    {
+      key: 'sale_status',
+      label: 'Durum',
+      render: (val) => (
+        <span className={`inline-flex items-center gap-1 border rounded-full text-[11px] font-bold px-2.5 py-1 ${getStatusClasses(val)}`}>
+          {getStatusIcon(val)} {val || '-'}
+        </span>
+      )
+    },
+    {
+      key: 'budget_range',
+      label: 'Bütçe',
+      render: (val) => (
+        <span className="flex items-center gap-1.5 text-slate-600 font-medium bg-slate-50 border border-slate-100 px-2.5 py-1 rounded-lg text-[11px] w-max">
+          <Banknote size={13} className="text-emerald-500" /> {val || '-'}
+        </span>
+      )
+    },
+    {
+      key: 'notes',
+      label: 'Notlar',
+      render: (val) => (
+        <span className="text-slate-500 text-[12px] max-w-[180px] truncate block" title={val}>
+          {val || '-'}
+        </span>
+      )
+    },
+    {
+      key: 'contract_no',
+      label: 'Sözleşme',
+      render: (_, row) => (
+        <div className="flex items-center gap-2 text-[12px]">
+          <span className="text-slate-500">{row.contract_no || row.units?.contract_no || '-'}</span>
+          {(row.contract_file || row.units?.contract_file) && (
+            <div className="flex items-center gap-1">
+              <a href={row.contract_file || row.units?.contract_file} target="_blank" rel="noopener noreferrer"
+                onClick={(e) => e.stopPropagation()} className="p-1 text-indigo-500 hover:bg-indigo-50 rounded transition-all" title="Görüntüle">
+                <Eye size={13} />
+              </a>
+              <a href={row.contract_file || row.units?.contract_file} download
+                onClick={(e) => e.stopPropagation()} className="p-1 text-slate-400 hover:bg-slate-50 rounded transition-all" title="İndir">
+                <Download size={13} />
+              </a>
+            </div>
+          )}
+        </div>
+      )
+    },
+    {
+      key: 'actions',
+      label: 'İşlemler',
+      sortable: false,
+      align: 'center',
+      stopPropagation: true,
+      render: (_, row) => (
+        <button
+          onClick={(e) => { e.stopPropagation(); openEditModal(row); }}
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[12px] font-semibold text-slate-600 bg-white border border-slate-200 hover:text-indigo-600 hover:border-indigo-200 hover:bg-indigo-50 rounded-lg transition-all shadow-sm"
+        >
+          <Pencil size={13} /> Düzenle
+        </button>
+      )
+    },
+  ];
 
   return (
-    <div className="flex min-h-screen bg-[#F5F5F7] font-sans text-slate-800">
+    <div className="flex min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-50 font-sans text-slate-800">
       <Sidebar isMobileMenuOpen={isMobileMenuOpen} closeMobileMenu={() => setIsMobileMenuOpen(false)} />
       <main className="flex-1 overflow-y-auto h-screen pt-16 md:pt-0 relative">
         <Navbar title="Satışlar" toggleMobileMenu={toggleMobileMenu} />
 
-        <div className="px-4 sm:px-6 md:px-8 pb-12 pt-4 space-y-8">
-          <SectionHeader
-            title="Satış Kayıtları"
-            action={
-              <>
-                {/* Durum Filtresi */}
-                <div className="relative" ref={filterDropdownRef}>
-                  <button
-                    onClick={toggleFilterDropdown}
-                    className="flex items-center gap-1.5 text-sm font-medium text-slate-600 bg-white hover:bg-slate-50 border border-slate-200 shadow-sm px-3 py-1.5 rounded-lg transition-colors"
-                  >
-                    <Filter size={14} />
-                    {selectedStatusFilter !== 'Hepsi' && (
-                      <span className="ml-1 px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 text-xs font-semibold">
-                        {selectedStatusFilter}
-                      </span>
-                    )}
-                  </button>
-                  {isFilterDropdownOpen && (
-                    <div className="absolute top-full right-0 mt-2 w-48 bg-white border border-slate-200 rounded-lg shadow-lg z-20 animate-in fade-in-25">
-                      <div className="p-2">
-                        <p className="text-xs font-semibold text-slate-400 px-2 pt-1 pb-2">Duruma Göre Filtrele</p>
-                        {allStatusOptions.map(option => (
-                          <button
-                            key={option}
-                            onClick={() => handleFilterChange(option)}
-                            className={`flex items-center justify-between w-full px-2 py-1.5 rounded-md text-sm ${selectedStatusFilter === option ? 'bg-blue-50 text-blue-700 font-semibold' : 'hover:bg-slate-50 text-slate-700'}`}
-                          >
-                            <span>{option}</span>
-                            {selectedStatusFilter === option && <CheckCircle2 size={16} className="text-blue-600" />}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
+        <div className="px-4 sm:px-6 md:px-8 pb-12 pt-6 space-y-6">
 
-                {/* Sütun Görünürlüğü (Kullanıcının bahsettiği filtreler) */}
-                <div className="relative" ref={columnDropdownRef}>
-                  <button
-                    onClick={() => setIsColumnDropdownOpen(prev => !prev)}
-                    className="flex items-center gap-1.5 text-sm font-medium text-slate-600 bg-white hover:bg-slate-50 border border-slate-200 shadow-sm px-3 py-1.5 rounded-lg transition-colors"
-                  >
-                    <Columns size={14} /> Sütunlar
-                  </button>
-                  {isColumnDropdownOpen && (
-                    <div className="absolute top-full right-0 mt-2 w-56 bg-white border border-slate-200 rounded-lg shadow-lg z-20 animate-in fade-in-25">
-                      <div className="p-2">
-                        <p className="text-xs font-semibold text-slate-400 px-2 pt-1 pb-2">Gösterilecek Sütunlar</p>
-                        {optionalColumns.map(col => (
-                          <label key={col.key} className="flex items-center gap-2 px-2 py-1.5 rounded-md hover:bg-slate-50 cursor-pointer">
-                            <input
-                              type="checkbox"
-                              checked={visibleColumns.includes(col.key)}
-                              onChange={() => toggleColumnVisibility(col.key)}
-                              className="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer accent-blue-600"
-                            />
-                            <span className="text-sm text-slate-700">{col.label}</span>
-                          </label>
-                        ))}
-                      </div>
-                    </div>
-                  )}
+          {/* Stats */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="bg-white rounded-2xl border border-slate-200 p-5 card-hover">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Toplam Satış</p>
+                  <p className="text-2xl font-bold text-slate-800">{sales.length}</p>
                 </div>
-
-                <button onClick={openAddModal} className="flex items-center gap-1.5 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 shadow-sm px-3 py-1.5 rounded-lg transition-colors">
-                  <Plus size={14} /> Yeni Satış
-                </button>
-              </>
-            }
-          />
-
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
-            {/* Seçim Aksiyon Çubuğu */}
-            {selectedSales.length > 0 && (
-              <div className="flex flex-wrap items-center justify-between border border-slate-200 p-3 rounded-xl mb-4 animate-in fade-in slide-in-from-top-2 duration-200">
-                <div className="flex items-center gap-3 mb-2 sm:mb-0">
-                  <span className="flex items-center justify-center bg-blue-600 text-white w-6 h-6 rounded-full text-xs font-bold">{selectedSales.length}</span>
-                  <span className="text-sm font-medium text-slate-700">kayıt seçildi</span>
-                </div>
-                <div className="flex flex-wrap items-center gap-2 sm:gap-4">
-                  <button onClick={handleSelectAll} className="flex items-center gap-1.5 text-sm font-medium text-blue-700 bg-blue-50 hover:bg-blue-100 transition-colors px-3 py-1.5 rounded-lg">
-                    <CheckSquare size={16} />
-                    <span className="hidden sm:inline">{selectedSales.length === filteredSales.length ? 'Seçimi Temizle' : 'Tümünü Seç'}</span>
-                  </button>
-                  <div className="w-px h-5 bg-slate-300"></div>
-                  <button onClick={handleDeleteSelected} className="flex items-center gap-1.5 text-sm font-medium text-red-600 hover:text-red-700 bg-red-50 hover:bg-red-100 px-3 py-1.5 rounded-lg transition-colors">
-                    <Trash2 size={16} /> <span>Sil</span>
-                  </button>
+                <div className="w-11 h-11 rounded-xl bg-indigo-50 flex items-center justify-center text-indigo-600">
+                  <ShoppingCart size={22} />
                 </div>
               </div>
-            )}
-
-            {/* Satışlar Tablosu */}
-            <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse min-w-max">
-                <thead>
-                  <tr className="text-xs font-semibold text-slate-400 border-b border-slate-100">
-                    <th className="pb-3 pl-2 w-10"></th>
-                    <th className="pb-3 px-4">Müşteri Bilgileri</th>
-                    <th className="pb-3 px-4">Daire Bilgileri</th>
-                    <th className="pb-3 px-4">Durum</th>
-                    <th className="pb-3 px-4">Bütçe Aralığı</th>
-                    <th className="pb-3 px-4">Notlar</th>
-                    {visibleColumns.includes('offered_price') && <th className="pb-3 px-4">Verilen Teklif</th>}
-                    {visibleColumns.includes('sale_date') && <th className="pb-3 px-4">Satış Tarihi</th>}
-                    {visibleColumns.includes('contract_no') && <th className="pb-3 px-4">Sözleşme No</th>}
-                    {visibleColumns.includes('createdAt') && <th className="pb-3 px-4">Oluşturma Tarihi</th>}
-                    <th className="pb-3 px-4 text-center">İşlemler</th>
-                  </tr>
-                </thead>
-                <tbody className="text-sm">
-                  {filteredSales.length === 0 ? (
-                    <tr>
-                      <td colSpan={11} className="py-8 text-center text-slate-500">
-                        {selectedStatusFilter === 'Hepsi' ? 'Gösterilecek satış kaydı bulunamadı.' : `"${selectedStatusFilter}" durumunda kayıt bulunamadı.`}
-                      </td>
-                    </tr>
-                  ) : (
-                    filteredSales.map(sale => (
-                      <tr
-                        key={sale.id}
-                        onClick={() => openDetailsModal(sale)}
-                        className={`group transition-colors border-b border-slate-50 last:border-none cursor-pointer ${selectedSales.includes(sale.id) ? 'bg-blue-50/50' : 'hover:bg-slate-50'}`}
-                      >
-                        <td className="py-4 pl-2 align-top pt-5" onClick={(e) => e.stopPropagation()}>
-                          <input
-                            type="checkbox"
-                            checked={selectedSales.includes(sale.id)}
-                            onChange={(e) => {
-                              e.stopPropagation();
-                              handleSelectSale(sale.id);
-                            }}
-                            className="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer accent-blue-600"
-                          />
-                        </td>
-
-                        {/* Müşteri Bilgileri */}
-                        <td className="py-4 px-4 align-top">
-                          <div className="flex flex-col gap-1">
-                            <span className="font-semibold text-slate-700">{sale.customers?.full_name || '-'}</span>
-                            <span className="flex items-center gap-1 text-xs text-slate-500">
-                              <Phone size={12} /> {sale.customers?.phone || '-'}
-                            </span>
-                          </div>
-                        </td>
-
-                        {/* İlgili Daire Bilgileri */}
-                        <td className="py-4 px-4 align-top">
-                          <div className="flex flex-col gap-1">
-                            <span className="font-medium text-slate-700 flex items-center gap-1.5">
-                              <Building2 size={14} className="text-blue-500" /> {sale.projects?.name || '-'}
-                            </span>
-                            <span className="text-xs text-slate-500 bg-slate-100 px-2 py-0.5 rounded-md inline-block w-max">
-                              <strong className="text-slate-700">{sale.interested_product || '-'}</strong>
-                            </span>
-                          </div>
-                        </td>
-
-                        {/* Satış Durumu */}
-                        <td className="py-4 px-4 align-top pt-5">
-                          <span className={`inline-flex items-center gap-1 border rounded-full ${getStatusClasses(sale.sale_status)}`}>
-                            {getStatusIcon(sale.sale_status)} {sale.sale_status || '-'}
-                          </span>
-                        </td>
-
-                        {/* Bütçe Aralığı */}
-                        <td className="py-4 px-4 align-top pt-5">
-                          <span className="flex items-center gap-1.5 text-slate-600 font-medium bg-slate-50 border border-slate-100 px-2 py-1 rounded-md text-xs w-max">
-                            <Banknote size={14} className="text-emerald-500" /> {sale.budget_range || '-'}
-                          </span>
-                        </td>
-
-                        {/* Notlar */}
-                        <td className="py-4 px-4 align-top pt-5 text-slate-500 max-w-[200px] truncate" title={sale.notes}>
-                          {sale.notes || '-'}
-                        </td>
-
-                        {/* İsteğe Bağlı Sütunlar */}
-                        {visibleColumns.includes('offered_price') && <td className="py-4 px-4 align-top pt-5 text-slate-700 font-medium">{formatCurrency(sale.offered_price)}</td>}
-                        {visibleColumns.includes('sale_date') && <td className="py-4 px-4 align-top pt-5 text-slate-500">{formatDate(sale.created_at)}</td>}
-                        {visibleColumns.includes('contract_no') && (
-                          <td className="py-4 px-4 align-top pt-5 text-slate-500">
-                            <div className="flex items-center gap-2">
-                              {sale.contract_no || sale.units?.contract_no || '-'}
-                              {(sale.contract_file || sale.units?.contract_file) && (
-                                <div className="flex items-center gap-1.5 ml-1">
-                                  <a
-                                    href={sale.contract_file || sale.units?.contract_file}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    onClick={(e) => e.stopPropagation()}
-                                    className="p-1 text-blue-500 hover:bg-blue-50 rounded transition-all"
-                                    title="Sözleşmeyi Görüntüle"
-                                  >
-                                    <Eye size={14} />
-                                  </a>
-                                  <a
-                                    href={sale.contract_file || sale.units?.contract_file}
-                                    download
-                                    onClick={(e) => e.stopPropagation()}
-                                    className="p-1 text-slate-400 hover:bg-slate-50 rounded transition-all"
-                                    title="Sözleşmeyi İndir"
-                                  >
-                                    <Download size={14} />
-                                  </a>
-                                </div>
-                              )}
-                            </div>
-                          </td>
-                        )}
-                        {visibleColumns.includes('contract_file') && (
-                          <td className="py-4 px-4 align-top pt-5">
-                            {sale.contract_file || sale.units?.contract_file ? (
-                              <a
-                                href={sale.contract_file || sale.units?.contract_file}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                download
-                                onClick={(e) => e.stopPropagation()}
-                                className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-blue-50 text-blue-600 text-xs font-medium hover:bg-blue-100 transition-colors"
-                              >
-                                <FileText size={14} /> İndir
-                              </a>
-                            ) : '-'}
-                          </td>
-                        )}
-                        {visibleColumns.includes('createdAt') && <td className="py-4 px-4 align-top pt-5 text-slate-500">{formatDate(sale.created_at)}</td>}
-
-                        {/* İşlemler */}
-                        <td className="py-4 px-4 text-center align-top pt-4">
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              openEditModal(sale);
-                            }}
-                            className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 text-sm font-medium text-slate-600 bg-white border border-slate-200 hover:text-blue-600 hover:border-blue-200 hover:bg-blue-50 rounded-lg transition-all shadow-sm"
-                          >
-                            <Pencil size={14} /> Düzenle
-                          </button>
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
+            </div>
+            <div className="bg-white rounded-2xl border border-slate-200 p-5 card-hover">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Tamamlanan</p>
+                  <p className="text-2xl font-bold text-emerald-600">{soldCount}</p>
+                </div>
+                <div className="w-11 h-11 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-600">
+                  <TrendingUp size={22} />
+                </div>
+              </div>
+            </div>
+            <div className="bg-white rounded-2xl border border-slate-200 p-5 card-hover">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Beklemede</p>
+                  <p className="text-2xl font-bold text-amber-600">{pendingCount}</p>
+                </div>
+                <div className="w-11 h-11 rounded-xl bg-amber-50 flex items-center justify-center text-amber-600">
+                  <Clock size={22} />
+                </div>
+              </div>
             </div>
           </div>
+
+          {/* Header */}
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <h2 className="text-lg font-bold text-slate-800">Satış Kayıtları</h2>
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="relative" ref={filterDropdownRef}>
+                <button
+                  onClick={toggleFilterDropdown}
+                  className="flex items-center gap-1.5 text-sm font-medium text-slate-600 bg-white hover:bg-slate-50 border border-slate-200 shadow-sm px-3.5 py-2 rounded-xl transition-all"
+                >
+                  <Filter size={14} />
+                  {selectedStatusFilter !== 'Hepsi' && (
+                    <span className="ml-1 px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700 text-xs font-semibold">
+                      {selectedStatusFilter}
+                    </span>
+                  )}
+                </button>
+                {isFilterDropdownOpen && (
+                  <div className="absolute top-full right-0 mt-2 w-52 bg-white border border-slate-200 rounded-xl shadow-xl z-20 animate-scale-in overflow-hidden">
+                    <div className="p-2">
+                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider px-2 pt-1 pb-2">Duruma Göre Filtrele</p>
+                      {allStatusOptions.map(option => (
+                        <button
+                          key={option}
+                          onClick={() => handleFilterChange(option)}
+                          className={`flex items-center justify-between w-full px-3 py-2 rounded-lg text-sm transition-all ${selectedStatusFilter === option ? 'bg-indigo-50 text-indigo-700 font-semibold' : 'hover:bg-slate-50 text-slate-700'}`}
+                        >
+                          <span>{option}</span>
+                          {selectedStatusFilter === option && <CheckCircle2 size={16} className="text-indigo-600" />}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+              <button onClick={openAddModal} className="btn-primary">
+                <Plus size={15} /> Yeni Satış
+              </button>
+            </div>
+          </div>
+
+          {/* Selection */}
+          {selectedSales.length > 0 && (
+            <div className="flex flex-wrap items-center justify-between bg-indigo-50 border border-indigo-200 p-3.5 rounded-xl animate-fade-in">
+              <div className="flex items-center gap-3 mb-2 sm:mb-0">
+                <span className="flex items-center justify-center bg-indigo-600 text-white w-7 h-7 rounded-lg text-xs font-bold">{selectedSales.length}</span>
+                <span className="text-sm font-semibold text-indigo-800">kayıt seçildi</span>
+              </div>
+              <div className="flex flex-wrap items-center gap-2">
+                <button onClick={handleSelectAll} className="flex items-center gap-1.5 text-sm font-semibold text-indigo-700 bg-white hover:bg-indigo-100 transition-colors px-3 py-1.5 rounded-lg border border-indigo-200">
+                  <CheckSquare size={15} />
+                  <span className="hidden sm:inline">{selectedSales.length === filteredSales.length ? 'Seçimi Temizle' : 'Tümünü Seç'}</span>
+                </button>
+                <button onClick={handleDeleteSelected} className="flex items-center gap-1.5 text-sm font-semibold text-red-600 bg-red-50 hover:bg-red-100 px-3 py-1.5 rounded-lg border border-red-200 transition-colors">
+                  <Trash2 size={15} /> Sil
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* DataTable */}
+          <DataTable
+            columns={tableColumns}
+            data={filteredSales}
+            loading={loading}
+            onRowClick={openDetailsModal}
+            selectable={true}
+            selectedRows={selectedSales}
+            onSelect={handleSelectSale}
+            rowKey="id"
+            searchPlaceholder="Satış kayıtlarında ara..."
+            pageSize={10}
+            emptyMessage={selectedStatusFilter === 'Hepsi' ? 'Gösterilecek satış kaydı bulunamadı.' : `"${selectedStatusFilter}" durumunda kayıt bulunamadı.`}
+          />
         </div>
 
-        {/* --- MODALLAR --- */}
-        <SaleDetailsModal
-          isOpen={isDetailsModalOpen}
-          data={selectedSaleForDetails}
-          onClose={closeDetailsModal}
-          onEdit={openEditModal}
-        />
-
-        <SaleEditModal
-          isOpen={isEditModalOpen}
-          saleData={editFormData}
-          onClose={closeEditModal}
-          onChange={handleEditFormChange}
-          onSave={handleUpdateSale}
+        <SaleDetailsModal isOpen={isDetailsModalOpen} data={selectedSaleForDetails} onClose={closeDetailsModal} onEdit={openEditModal} />
+        <SaleEditModal isOpen={isEditModalOpen} saleData={editFormData} onClose={closeEditModal} onChange={handleEditFormChange} onSave={handleUpdateSale}
           customers={customers.filter(c => String(c.company_id) === String(user?.company_id))}
-          projects={projects.filter(p => String(p.contractor_id) === String(user?.company_id))}
-        />
-
-        <NewSaleModal
-          isOpen={isAddModalOpen}
-          formData={newSaleData}
-          onClose={closeAddModal}
-          onChange={handleNewSaleChange}
-          onAdd={handleAddNewSale}
+          projects={projects.filter(p => String(p.contractor_id) === String(user?.company_id))} />
+        <NewSaleModal isOpen={isAddModalOpen} formData={newSaleData} onClose={closeAddModal} onChange={handleNewSaleChange} onAdd={handleAddNewSale}
           customers={customers.filter(c => String(c.company_id) === String(user?.company_id))}
-          projects={projects.filter(p => String(p.contractor_id) === String(user?.company_id))}
-        />
-
+          projects={projects.filter(p => String(p.contractor_id) === String(user?.company_id))} />
       </main>
     </div>
   );

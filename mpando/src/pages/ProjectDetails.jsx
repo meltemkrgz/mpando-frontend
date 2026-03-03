@@ -338,7 +338,7 @@ function ProjectDetails() {
     }
 
     return (
-        <div className="flex min-h-screen bg-[#F5F5F7] font-sans text-slate-800">
+        <div className="flex min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-50 font-sans text-slate-800">
             <Sidebar isMobileMenuOpen={isMobileMenuOpen} closeMobileMenu={closeMobileMenu} />
 
             <main className="flex-1 overflow-y-auto h-screen md:pt-0">

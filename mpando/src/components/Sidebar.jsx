@@ -1,355 +1,67 @@
 import React, { useState } from "react";
-import { useLocation, Link } from "react-router-dom"; // 'href' React Router'dan bir export değildir.
-
-// SecondHandListings sayfasının importunu kaldırıyoruz çünkü sadece data modelini güncelleyeceğiz.
-// import SecondHandListings from "../pages/SecondHandListings"; 
+import { useLocation, Link } from "react-router-dom";
 
 const icons = {
   Dashboard: (
-    <svg
-      className="w-5 h-5"
-      fill="none"
-      stroke="currentColor"
-      viewBox="0 0 24 24"
-    >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth={1.5}
-        d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"
-      />
+    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
     </svg>
   ),
   Projects: (
-    <svg
-      className="w-5 h-5"
-      fill="none"
-      stroke="currentColor"
-      viewBox="0 0 24 24"
-    >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth={1.5}
-        d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"
-      />
-    </svg>
-  ),
-  AI: (
-    <svg
-      className="w-5 h-5"
-      fill="none"
-      stroke="currentColor"
-      viewBox="0 0 24 24"
-    >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth={1.5}
-        d="M13 10V3L4 14h7v7l9-11h-7z"
-      />
-    </svg>
-  ),
-  QuantityTakeoff: (
-    <svg
-      className="w-5 h-5"
-      fill="none"
-      stroke="currentColor"
-      viewBox="0 0 24 24"
-    >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth={1.5}
-        d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"
-      />
-    </svg>
-  ),
-  Inventory: (
-    <svg
-      className="w-5 h-5"
-      fill="none"
-      stroke="currentColor"
-      viewBox="0 0 24 24"
-    >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth={1.5}
-        d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"
-      />
-    </svg>
-  ),
-  PurchaseRequests: (
-    <svg
-      className="w-5 h-5"
-      fill="none"
-      stroke="currentColor"
-      viewBox="0 0 24 24"
-    >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth={1.5}
-        d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"
-      />
-    </svg>
-  ),
-  Suppliers: (
-    <svg
-      className="w-5 h-5"
-      fill="none"
-      stroke="currentColor"
-      viewBox="0 0 24 24"
-    >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth={1.5}
-        d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
-      />
-    </svg>
-  ),
-  Subcontractors: (
-    <svg
-      className="w-5 h-5"
-      fill="none"
-      stroke="currentColor"
-      viewBox="0 0 24 24"
-    >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth={1.5}
-        d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
-      />
-    </svg>
-  ),
-  SiteReports: (
-    <svg
-      className="w-5 h-5"
-      fill="none"
-      stroke="currentColor"
-      viewBox="0 0 24 24"
-    >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth={1.5}
-        d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-      />
+    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
     </svg>
   ),
   Personnel: (
-    <svg
-      className="w-5 h-5"
-      fill="none"
-      stroke="currentColor"
-      viewBox="0 0 24 24"
-    >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth={1.5}
-        d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"
-      />
-    </svg>
-  ),
-  Accounting: (
-    <svg
-      className="w-5 h-5"
-      fill="none"
-      stroke="currentColor"
-      viewBox="0 0 24 24"
-    >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth={1.5}
-        d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8v8m0-8V6m0 12v-2m0 0V8m-7 4h14M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-      />
-    </svg>
-  ),
-  Contracts: (
-    <svg
-      className="w-5 h-5"
-      fill="none"
-      stroke="currentColor"
-      viewBox="0 0 24 24"
-    >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth={1.5}
-        d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2"
-      />
-    </svg>
-  ),
-  Invoices: (
-    <svg
-      className="w-5 h-5"
-      fill="none"
-      stroke="currentColor"
-      viewBox="0 0 24 24"
-    >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth={1.5}
-        d="M9 14l6-6m-5.5.5h.01m4.99 5h.01M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16l3.5-2 3.5 2 3.5-2 3.5 2z"
-      />
-    </svg>
-  ),
-  Settings: (
-    <svg
-      className="w-5 h-5"
-      fill="none"
-      stroke="currentColor"
-      viewBox="0 0 24 24"
-    >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth={1.5}
-        d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
-      />
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth={1.5}
-        d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-      />
-    </svg>
-  ),
-  Help: (
-    <svg
-      className="w-5 h-5"
-      fill="none"
-      stroke="currentColor"
-      viewBox="0 0 24 24"
-    >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth={1.5}
-        d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-      />
-    </svg>
-  ),
-  Menu: (
-    <svg
-      className="w-6 h-6"
-      fill="none"
-      stroke="currentColor"
-      viewBox="0 0 24 24"
-    >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth={1.5}
-        d="M4 6h16M4 12h16M4 18h16"
-      />
-    </svg>
-  ),
-  Close: (
-    <svg
-      className="w-6 h-6"
-      fill="none"
-      stroke="currentColor"
-      viewBox="0 0 24 24"
-    >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth={1.5}
-        d="M6 18L18 6M6 6l12 12"
-      />
-    </svg>
-  ),
-  ChevronDown: (
-    <svg
-      className="w-4 h-4"
-      fill="none"
-      stroke="currentColor"
-      viewBox="0 0 24 24"
-    >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth={1.5}
-        d="M19 9l-7 7-7-7"
-      />
-    </svg>
-  ),
-  Search: (
-    <svg
-      className="w-4 h-4"
-      fill="none"
-      stroke="currentColor"
-      viewBox="0 0 24 24"
-    >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth={1.5}
-        d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-      />
+    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
     </svg>
   ),
   Sales: (
-    <svg
-      className="w-5 h-5"
-      fill="none"
-      stroke="currentColor"
-      viewBox="0 0 24 24"
-    >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth={1.5}
-        d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"
-      />
+    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
     </svg>
   ),
-  // Emlak için genel bir ev ikonu
   House: (
-    <svg
-      className="w-5 h-5"
-      fill="none"
-      stroke="currentColor"
-      viewBox="0 0 24 24"
-    >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth={1.5}
-        d="M3 12l9-9 9 9M5 10v10a1 1 0 001 1h3v-6h6v6h3a1 1 0 001-1V10"
-      />
+    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 12l9-9 9 9M5 10v10a1 1 0 001 1h3v-6h6v6h3a1 1 0 001-1V10" />
     </svg>
   ),
-  // 2. El İlanlar için mevcut ikon (biraz daha spesifik bir ev ve dönüş oku)
   SecondHandListings: (
-    <svg
-      className="w-5 h-5"
-      fill="none"
-      stroke="currentColor"
-      viewBox="0 0 24 24"
-    >
-      {/* House */}
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth={1.5}
-        d="M3 10.5L12 3l9 7.5M5 9.5V20a1 1 0 001 1h4v-6h4v6h4a1 1 0 001-1V9.5"
-      />
-
-      {/* Refresh Arrow (Second-hand indicator) */}
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth={1.5}
-        d="M9 21a6 6 0 0010-3M19 14v4h-4"
-      />
+    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 10.5L12 3l9 7.5M5 9.5V20a1 1 0 001 1h4v-6h4v6h4a1 1 0 001-1V9.5" />
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 21a6 6 0 0010-3M19 14v4h-4" />
+    </svg>
+  ),
+  Help: (
+    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+    </svg>
+  ),
+  Settings: (
+    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+    </svg>
+  ),
+  ChevronDown: (
+    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 9l-7 7-7-7" />
+    </svg>
+  ),
+  Search: (
+    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+    </svg>
+  ),
+  Close: (
+    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M6 18L18 6M6 6l12 12" />
+    </svg>
+  ),
+  Messages: (
+    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
     </svg>
   ),
 };
@@ -363,54 +75,37 @@ const navigationGroups = [
       { name: "Müşteriler", icon: icons.Personnel, href: "/customers" },
       { name: "Satış Kayıtları", icon: icons.Sales, href: "/sales" },
       {
-        name: "Emlak", // Yeni ana başlık
-        icon: icons.House, // Emlak için ikon
-        type: "dropdown", // Bu öğenin bir dropdown olduğunu belirtir
+        name: "Emlak",
+        icon: icons.House,
+        type: "dropdown",
         children: [
-          {
-            name: "2. El İlanlar",
-            icon: icons.SecondHandListings, // Alt başlık için ikon
-            href: "/second-hand-listings",
-          },
-          // İsterseniz buraya başka emlak ile ilgili alt öğeler ekleyebilirsiniz
-          // { name: "Yeni İlan Ekle", icon: icons.Plus, href: "/second-hand-listings/new" },
+          { name: "2. El İlanlar", icon: icons.SecondHandListings, href: "/second-hand-listings" },
         ],
       },
+      { name: "Mesajlar", icon: icons.Messages, href: "/messages" },
     ],
   },
 ];
 
 export default function Sidebar({ isMobileMenuOpen, closeMobileMenu }) {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
-  // Hangi dropdown'ların açık olduğunu tutmak için yeni state
   const [openDropdowns, setOpenDropdowns] = useState({});
-
-  const toggleDesktopCollapse = () =>
-    setIsSidebarCollapsed(!isSidebarCollapsed);
+  const toggleDesktopCollapse = () => setIsSidebarCollapsed(!isSidebarCollapsed);
   const location = useLocation();
 
   const sidebarWidthClass = isSidebarCollapsed
     ? "w-[280px] md:w-20"
     : "w-[280px] md:w-[280px]";
 
-  // Dropdown'ı açıp kapatan fonksiyon
   const toggleDropdown = (dropdownName) => {
-    setOpenDropdowns((prev) => ({
-      ...prev,
-      [dropdownName]: !prev[dropdownName],
-    }));
+    setOpenDropdowns((prev) => ({ ...prev, [dropdownName]: !prev[dropdownName] }));
   };
 
-  // Bir dropdown'ın veya bir Link'in aktif olup olmadığını kontrol eden yardımcı fonksiyon
   const isActivePath = (href) => location.pathname === href;
 
-  // Bir dropdown ana başlığının aktif olup olmadığını kontrol eder (kendi yolu veya çocuklarından biri aktifse)
   const isDropdownParentActive = (item) => {
     if (item.type === "dropdown") {
-      return (
-        openDropdowns[item.name] || // Kendi açıksa
-        item.children.some((child) => isActivePath(child.href)) // Çocuklarından biri aktifse
-      );
+      return openDropdowns[item.name] || item.children.some((child) => isActivePath(child.href));
     }
     return false;
   };
@@ -419,46 +114,37 @@ export default function Sidebar({ isMobileMenuOpen, closeMobileMenu }) {
     <>
       {isMobileMenuOpen && (
         <div
-          className="fixed inset-0 bg-slate-900/20 backdrop-blur-sm z-45 md:hidden transition-opacity duration-300"
+          className="fixed inset-0 bg-black/40 backdrop-blur-sm z-45 md:hidden transition-opacity duration-300"
           onClick={closeMobileMenu}
         />
       )}
 
-      {/* Sidebar Component */}
       <aside
         className={`fixed inset-y-0 left-0 z-50 flex flex-col ${sidebarWidthClass}
-          bg-white/70 backdrop-blur-xl border-r border-slate-200/60 shadow-[4px_0_24px_-12px_rgba(0,0,0,0.1)]
+          bg-[#0f172a] border-r border-white/[0.06]
           transform transition-all duration-500 cubic-bezier(0.16, 1, 0.3, 1) 
           md:relative md:translate-x-0 
           ${isMobileMenuOpen ? "translate-x-0" : "-translate-x-full"}`}
       >
-        {/* Header Section */}
-        <div
-          className={`flex items-center ${
-            isSidebarCollapsed ? "justify-center" : "justify-between px-6"
-          } h-16 mb-2`}
-        >
+        {/* Subtle gradient overlay */}
+        <div className="absolute inset-0 bg-gradient-to-b from-indigo-600/[0.03] via-transparent to-purple-600/[0.03] pointer-events-none" />
+
+        {/* Header */}
+        <div className={`relative flex items-center ${isSidebarCollapsed ? "justify-center" : "justify-between px-5"} h-16 mb-1`}>
           <div className="flex items-center gap-3">
-            <div
-              className={`rounded-xl bg-white text-slate-900 flex items-center justify-center font-bold shadow-lg shadow-slate-900/20 transition-all duration-300 ${
-                isSidebarCollapsed ? "w-10 h-10 text-lg" : "w-8 h-8 text-sm"
-              }`}
-            >
-              <img
-                src="/logo.png"
-                alt="User"
-                className="w-full h-full object-cover"
-              />
+            <div className={`rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg shadow-indigo-500/25 transition-all duration-300 ${isSidebarCollapsed ? "w-10 h-10" : "w-9 h-9"}`}>
+              <img src="/logo.png" alt="Logo" className="w-full h-full object-cover rounded-xl" />
             </div>
             {!isSidebarCollapsed && (
-              <span className="text-slate-900 font-bold text-lg tracking-tight">
-                MPANDO
-              </span>
+              <div className="flex flex-col">
+                <span className="text-white font-bold text-base tracking-tight">MPANDO</span>
+                <span className="text-[10px] text-slate-500 font-medium -mt-0.5">Construction Platform</span>
+              </div>
             )}
           </div>
 
           <button
-            className="md:hidden p-1 text-slate-400 hover:text-slate-800 transition-colors"
+            className="md:hidden p-1 text-slate-500 hover:text-white transition-colors"
             onClick={closeMobileMenu}
           >
             {icons.Close}
@@ -466,86 +152,55 @@ export default function Sidebar({ isMobileMenuOpen, closeMobileMenu }) {
 
           {!isSidebarCollapsed && (
             <button
-              className="hidden md:block p-1.5 text-slate-400 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition-all"
+              className="hidden md:block p-1.5 text-slate-500 hover:text-white hover:bg-white/5 rounded-lg transition-all"
               onClick={toggleDesktopCollapse}
             >
-              <svg
-                className="w-5 h-5"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={1.5}
-                  d="M11 19l-7-7 7-7m8 14l-7-7 7-7"
-                />
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M11 19l-7-7 7-7m8 14l-7-7 7-7" />
               </svg>
             </button>
           )}
 
           {isSidebarCollapsed && (
             <button
-              className="hidden md:flex absolute -right-3 top-6 w-6 h-6 bg-white border border-slate-200 rounded-full items-center justify-center text-slate-500 shadow-sm hover:text-slate-900 hover:scale-110 transition-all"
+              className="hidden md:flex absolute -right-3 top-6 w-6 h-6 bg-[#1e293b] border border-white/10 rounded-full items-center justify-center text-slate-400 shadow-lg hover:text-white hover:bg-indigo-600 hover:border-indigo-600 hover:scale-110 transition-all"
               onClick={toggleDesktopCollapse}
             >
-              <svg
-                className="w-3 h-3"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M13 5l7 7-7 7M5 5l7 7-7 7"
-                />
+              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 5l7 7-7 7M5 5l7 7-7 7" />
               </svg>
             </button>
           )}
         </div>
 
-        {/* Search Bar (Hidden if collapsed) */}
+        {/* Search */}
         {!isSidebarCollapsed && (
-          <div className="px-5 pb-6 space-y-3">
+          <div className="relative px-4 pb-4">
             <div className="relative group">
-              <div className="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none text-slate-400 group-focus-within:text-slate-600">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-500 group-focus-within:text-indigo-400 transition-colors">
                 {icons.Search}
               </div>
               <input
                 type="text"
                 placeholder="Ara..."
-                className="w-full pl-9 pr-3 py-1.5 bg-slate-100/80 border-transparent focus:bg-white border focus:border-blue-400/50 rounded-lg text-sm text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/10 transition-all duration-200"
+                className="w-full pl-9 pr-3 py-2 bg-white/[0.04] border border-white/[0.06] focus:bg-white/[0.08] focus:border-indigo-500/30 rounded-xl text-sm text-slate-300 placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-indigo-500/10 transition-all duration-200"
               />
             </div>
           </div>
         )}
 
-        {/* Scrollable Navigation */}
-        <div className="flex-1 overflow-y-auto overflow-x-hidden px-3 scrollbar-hide mask-image-b-fade">
+        {/* Navigation */}
+        <div className="relative flex-1 overflow-y-auto overflow-x-hidden px-3 scrollbar-hide">
           <nav className="space-y-6 pb-6">
             {navigationGroups.map((group, groupIdx) => (
               <div key={groupIdx}>
                 {!isSidebarCollapsed && (
-                  <p className="px-3 text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-2 mt-2">
+                  <p className="px-3 text-[10px] font-bold text-slate-600 uppercase tracking-[0.15em] mb-2 mt-2">
                     {group.title}
                   </p>
                 )}
                 <ul className="space-y-0.5">
                   {group.items.map((item, itemIdx) => {
-                    // Normal link veya dropdown öğesi için ortak aktif stil
-                    const baseLinkClasses = `
-                        group flex items-center gap-3 px-3 py-2 rounded-lg transition-all duration-200 ease-out
-                        ${isSidebarCollapsed ? "justify-center px-0 py-3" : ""}
-                    `;
-                    const activeLinkClasses =
-                      "bg-white text-slate-900 shadow-[0_1px_2px_rgba(0,0,0,0.05)] ring-1 ring-slate-200 font-medium";
-                    const inactiveLinkClasses =
-                      "text-slate-500 hover:bg-slate-100/80 hover:text-slate-900";
-
-                    // Normal bir Link öğesi
                     if (item.type !== "dropdown") {
                       const isActive = isActivePath(item.href);
                       return (
@@ -553,85 +208,63 @@ export default function Sidebar({ isMobileMenuOpen, closeMobileMenu }) {
                           <Link
                             to={item.href}
                             onClick={closeMobileMenu}
-                            className={`${baseLinkClasses} ${
-                              isActive ? activeLinkClasses : inactiveLinkClasses
-                            }`}
+                            className={`group flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 ease-out relative
+                              ${isSidebarCollapsed ? "justify-center px-0 py-3" : ""}
+                              ${isActive
+                                ? "bg-indigo-500/10 text-white"
+                                : "text-slate-400 hover:bg-white/[0.04] hover:text-slate-200"
+                              }`}
                             title={isSidebarCollapsed ? item.name : undefined}
                           >
-                            <span
-                              className={`
-                                transition-transform duration-200 group-hover:scale-105
-                                ${
-                                  isActive
-                                    ? "text-blue-600"
-                                    : "text-slate-400 group-hover:text-slate-600"
-                                }
-                              `}
-                            >
+                            {isActive && (
+                              <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 bg-indigo-500 rounded-r-full" />
+                            )}
+                            <span className={`transition-all duration-200 ${isActive ? "text-indigo-400" : "text-slate-500 group-hover:text-slate-300"}`}>
                               {item.icon}
                             </span>
                             {!isSidebarCollapsed && (
-                              <span className="text-[13.5px]">{item.name}</span>
+                              <span className={`text-[13px] ${isActive ? "font-semibold" : "font-medium"}`}>{item.name}</span>
+                            )}
+                            {isActive && !isSidebarCollapsed && (
+                              <div className="ml-auto w-1.5 h-1.5 rounded-full bg-indigo-400" />
                             )}
                           </Link>
                         </li>
                       );
                     } else {
-                      // Dropdown öğesi
                       const isDropdownOpen = openDropdowns[item.name];
-                      const isActive = isDropdownParentActive(item); // Parent aktifse veya çocuk aktifse
-
+                      const isActive = isDropdownParentActive(item);
                       return (
                         <li key={itemIdx}>
                           <button
                             type="button"
                             onClick={() => toggleDropdown(item.name)}
-                            className={`${baseLinkClasses} w-full
-                                ${
-                                  isActive
-                                    ? activeLinkClasses
-                                    : inactiveLinkClasses
-                                }
-                            `}
+                            className={`group flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 ease-out w-full
+                              ${isSidebarCollapsed ? "justify-center px-0 py-3" : ""}
+                              ${isActive
+                                ? "bg-indigo-500/10 text-white"
+                                : "text-slate-400 hover:bg-white/[0.04] hover:text-slate-200"
+                              }`}
                             title={isSidebarCollapsed ? item.name : undefined}
                             aria-expanded={isDropdownOpen}
-                            aria-controls={`dropdown-${item.name}`}
                           >
-                            <span
-                              className={`
-                                transition-transform duration-200 group-hover:scale-105
-                                ${
-                                  isActive
-                                    ? "text-blue-600"
-                                    : "text-slate-400 group-hover:text-slate-600"
-                                }
-                              `}
-                            >
+                            <span className={`transition-all duration-200 ${isActive ? "text-indigo-400" : "text-slate-500 group-hover:text-slate-300"}`}>
                               {item.icon}
                             </span>
                             {!isSidebarCollapsed && (
                               <>
-                                <span className="text-[13.5px] mr-auto text-left">
+                                <span className={`text-[13px] mr-auto text-left ${isActive ? "font-semibold" : "font-medium"}`}>
                                   {item.name}
                                 </span>
-                                <span
-                                  className={`
-                                    transition-transform duration-200
-                                    ${isDropdownOpen ? "rotate-180" : ""}
-                                  `}
-                                >
+                                <span className={`transition-transform duration-200 text-slate-500 ${isDropdownOpen ? "rotate-180" : ""}`}>
                                   {icons.ChevronDown}
                                 </span>
                               </>
                             )}
                           </button>
 
-                          {/* Dropdown alt öğeleri */}
                           {isDropdownOpen && !isSidebarCollapsed && (
-                            <ul
-                              id={`dropdown-${item.name}`}
-                              className="ml-5 mt-1 space-y-0.5"
-                            >
+                            <ul className="ml-4 mt-1 space-y-0.5 border-l border-white/[0.06] pl-3">
                               {item.children.map((child, childIdx) => {
                                 const isChildActive = isActivePath(child.href);
                                 return (
@@ -639,28 +272,16 @@ export default function Sidebar({ isMobileMenuOpen, closeMobileMenu }) {
                                     <Link
                                       to={child.href}
                                       onClick={closeMobileMenu}
-                                      className={`
-                                            group flex items-center gap-3 px-3 py-2 rounded-lg transition-all duration-200 ease-out
-                                            ${
-                                              isChildActive
-                                                ? activeLinkClasses
-                                                : inactiveLinkClasses
-                                            }
-                                        `}
+                                      className={`group flex items-center gap-3 px-3 py-2 rounded-lg transition-all duration-200 ease-out
+                                        ${isChildActive
+                                          ? "bg-indigo-500/10 text-white"
+                                          : "text-slate-400 hover:bg-white/[0.04] hover:text-slate-200"
+                                        }`}
                                     >
-                                      <span
-                                        className={`
-                                            transition-transform duration-200 group-hover:scale-105
-                                            ${
-                                              isChildActive
-                                                ? "text-blue-600"
-                                                : "text-slate-400 group-hover:text-slate-600"
-                                            }
-                                        `}
-                                      >
+                                      <span className={`transition-all duration-200 ${isChildActive ? "text-indigo-400" : "text-slate-500 group-hover:text-slate-300"}`}>
                                         {child.icon}
                                       </span>
-                                      <span className="text-[13.5px]">
+                                      <span className={`text-[13px] ${isChildActive ? "font-semibold" : "font-medium"}`}>
                                         {child.name}
                                       </span>
                                     </Link>
@@ -680,25 +301,35 @@ export default function Sidebar({ isMobileMenuOpen, closeMobileMenu }) {
         </div>
 
         {/* Bottom Section */}
-        <div className="mt-auto bg-white/40 backdrop-blur-xl border-t border-slate-200/60 p-3">
-          <ul className="space-y-1 mb-3">
+        <div className="relative mt-auto border-t border-white/[0.06] p-3">
+          <ul className="space-y-1">
             <li>
               <Link
-                to="/help" // Link olarak değiştirildi
-                className={`flex items-center gap-3 px-3 py-2 rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-900 transition-colors ${
-                  isSidebarCollapsed ? "justify-center" : ""
-                }`}
+                to="/help"
+                className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-500 hover:bg-white/[0.04] hover:text-slate-300 transition-all
+                  ${isSidebarCollapsed ? "justify-center" : ""}`}
                 onClick={closeMobileMenu}
               >
-                <span className="group-hover:text-slate-600">
-                  {icons.Help}
-                </span>
-                {!isSidebarCollapsed && (
-                  <span className="text-sm">Destek ve Yardım</span>
-                )}
+                <span>{icons.Help}</span>
+                {!isSidebarCollapsed && <span className="text-sm font-medium">Destek ve Yardım</span>}
               </Link>
             </li>
           </ul>
+
+          {/* User Card */}
+          {!isSidebarCollapsed && (
+            <div className="mt-2 mx-1 p-3 rounded-xl bg-white/[0.03] border border-white/[0.06]">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center text-white text-xs font-bold shadow-lg shadow-indigo-500/20">
+                  M
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-semibold text-slate-300 truncate">Mpando User</p>
+                  <p className="text-[10px] text-slate-600 truncate">Pro Plan</p>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </aside>
     </>
